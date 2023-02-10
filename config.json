@@ -1,0 +1,16 @@
+{
+	"keywords":"wasm+OR+webassembly+OR+emscripten+OR+%22web+assembly%22",
+	"date":"2022-01-01..2023-01-03",
+	"stars":"20",
+	"forks":"20",
+	"size":"2",
+	"numOfSymptoms":"8",
+	"symptom0":"%22include%20%3Cemscripten.h%3E%22",
+	"symptom1":"%22include%20%3Chtml5.h%3E%22",
+	"symptom2":"%22EM_ASM(%22",
+	"symptom3":"%22EM_JS(%22",
+	"symptom4":"%22emcc%22",
+	"symptom5":"%22emsdk%22",
+	"symptom6":"%22-target%20cheerp-wasm%22",
+	"symptom7":"%22--target%3Dwasm32%22"
+}
