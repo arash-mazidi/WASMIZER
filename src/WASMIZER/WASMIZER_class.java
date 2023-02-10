@@ -140,7 +140,7 @@ public class WASMIZER_class {
 					}
 				}
 			});
-		} while (i * 100 < totalcount);
+		} while (i * 100 < totalcount && i<10);
 
 		System.out.println(repolist.size());
 
