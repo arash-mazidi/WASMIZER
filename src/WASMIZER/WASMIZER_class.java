@@ -89,9 +89,9 @@ public class WASMIZER_class {
 		clonedrepo = readFile("clonedrepo");
 		cloneddate = readFile("cloneddate");
 		metadata=readmetadata("metadata");
-		clonedrepo.remove(0);
-		cloneddate.remove(0);
-		metadata.remove(0);
+		//clonedrepo.remove(0);
+		//cloneddate.remove(0);
+		//metadata.remove(0);
 		String GITHUB_API_BASE_URL = "https://api.github.com/", GITHUB_API_SEARCH_CODE_PATH = "search/code?q=";
 		int i = 0;
 		do {
