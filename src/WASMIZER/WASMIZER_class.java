@@ -38,11 +38,18 @@ import org.json.simple.parser.ParseException;
 public class WASMIZER_class {
 
 	private static Gson gson;
+	public static List<String> metadata = new ArrayList<String>();
 	public static List<String> repolist = new ArrayList<String>();
 	public static List<String> clonedrepo = new ArrayList<String>();
+	public static List<String> starscountlist = new ArrayList<String>();
+	public static List<String> forkscountlist = new ArrayList<String>();
+	public static List<String> sizelist = new ArrayList<String>();
+	public static List<String> createddatelist = new ArrayList<String>();
+	public static List<String> idlist = new ArrayList<String>();
+	public static List<String> foldernamelist = new ArrayList<String>();
 	public static List<String> cloneddate = new ArrayList<String>();
 	public static List<String> repolistBasedcode = new ArrayList<String>();
-	public static List<String> datelist = new ArrayList<String>();
+	public static List<String> pusheddatelist = new ArrayList<String>();
 	public static List<String> CMakeListpaths = new ArrayList<String>();
 	public static List<String> submodules;
 	public static List<String> watfiles = new ArrayList<String>();
@@ -81,6 +88,10 @@ public class WASMIZER_class {
 		double totalcount, totalcount2;
 		clonedrepo = readFile("clonedrepo");
 		cloneddate = readFile("cloneddate");
+		metadata=readmetadata("metadata");
+		clonedrepo.remove(0);
+		cloneddate.remove(0);
+		metadata.remove(0);
 		String GITHUB_API_BASE_URL = "https://api.github.com/", GITHUB_API_SEARCH_CODE_PATH = "search/code?q=";
 		int i = 0;
 		do {
@@ -90,7 +101,7 @@ public class WASMIZER_class {
 					+ "+language:c+language:cpp+size:%3E=" + size + "%20forks:%3E=" + forks + "%20stars:%3E=" + stars
 					+ "%20&page=" + i + "&per_page=100";
 
-			//Check the results of github API
+			// Check the results of github API
 			do {
 				repocontentSearchResult = makeRESTCall(
 						GITHUB_API_BASE_URL + "search/repositories?q=" + repoContentQuery,
@@ -104,27 +115,43 @@ public class WASMIZER_class {
 
 			gson.toJsonTree(repocontentSearchResult).getAsJsonObject().get("items").getAsJsonArray().forEach(r -> {
 				// Ignore forked repositories
-				String fork = r.getAsJsonObject().get("fork").toString();
-				String repodate = r.getAsJsonObject().get("pushed_at").toString();
+				String id = r.getAsJsonObject().get("id").toString();
 				String repourl = r.getAsJsonObject().get("html_url").toString();
+				String foldername=repourl.split("/")[repourl.split("/").length - 2] + "-"
+						+ repourl.split("/")[repourl.split("/").length - 1];
+				foldername = foldername.replace("\"", "");
+				String fork = r.getAsJsonObject().get("fork").toString();
+								String createddate = r.getAsJsonObject().get("created_at").toString();
+				String pusheddate = r.getAsJsonObject().get("pushed_at").toString();
+				String starscount = r.getAsJsonObject().get("stargazers_count").toString();
+				String size = r.getAsJsonObject().get("size").toString();
+				String forkscount = r.getAsJsonObject().get("forks_count").toString();
+			
+				
 				if (fork.equals("false")) {
 					// if repository is not cloned, add to list for cloning
 					if (!(clonedrepo.contains(repourl))) {
+						idlist.add(id);
+						foldernamelist.add(foldername);
 						repolist.add(repourl);
-						datelist.add(repodate);
+						createddatelist.add(createddate);
+						pusheddatelist.add(pusheddate);
+						starscountlist.add(starscount);
+						forkscountlist.add(forkscount);
+						sizelist.add(size);				
 					}
 					// if repository is cloned but pushed after previous clone
-					else if (!(cloneddate.get(clonedrepo.indexOf(repourl)).equals(repodate))) {
+					else if (!(cloneddate.get(clonedrepo.indexOf(repourl)).equals(pusheddate))) {
 						int index = clonedrepo.indexOf(repourl);
 						clonedrepo.remove(index);
 						cloneddate.remove(index);
-						String folder = repourl.split("/")[repourl.split("/").length - 2] + "-"
-								+ repourl.split("/")[repourl.split("/").length - 1];
-						folder = folder.replace("\"", "");
+						metadata.remove(index);
+						String folder = foldername;
+						
 
 						// Repository cloned before but has pushed after cloning, we delete existing
 						// files
-						String comm0 = "cmd.exe /c rd /s /q " + folder + "";
+						String comm0 = "cmd.exe /c cd repobase && rd /s /q " + folder + "";
 						runcommand(comm0, 120);
 						String comm1 = "cmd.exe /c cd wasm-wat-files-pre\\wat-files && rd /s /q " + folder + "";
 						runcommand(comm1, 60);
@@ -135,18 +162,24 @@ public class WASMIZER_class {
 						String comm4 = "cmd.exe /c cd wasm-wat-files\\wasm-files && rd /s /q " + folder + "";
 						runcommand(comm4, 60);
 
+						idlist.add(id);
+						foldernamelist.add(foldername);
 						repolist.add(repourl);
-						datelist.add(repodate);
+						createddatelist.add(createddate);
+						pusheddatelist.add(pusheddate);
+						starscountlist.add(starscount);
+						forkscountlist.add(forkscount);
+						sizelist.add(size);	
 					}
 				}
 			});
-		} while (i * 100 < totalcount && i<10);
+		} while (i * 100 < totalcount && i < 10);
 
 		System.out.println(repolist.size());
 
 		// Save the repositories in the file
 		saveArraylistFile(repolist, "repositories");
-		saveArraylistFile(datelist, "datelist");
+		saveArraylistFile(pusheddatelist, "pusheddatelist");
 
 		System.out.println("Repositories are saved in the file!");
 
@@ -208,7 +241,7 @@ public class WASMIZER_class {
 			String command5 = "cmd.exe /c cd wasm-wat-files-pre\\wat-files && md " + reponame + "";
 			runcommand(command5, 60);
 
-			String rootDir = path + "\\";
+			String rootDir = "repobase\\"+ path + "\\";
 
 			// Find submodules in a repository
 			submodules = new ArrayList<String>();
@@ -233,20 +266,21 @@ public class WASMIZER_class {
 			// Search for .wasm and .wat before compile
 			searchForWasmAndWat(root1, "pre");
 			// Search for CMakeLists.txt files
-			searchForCMakefile(root1);
+//			searchForCMakefile(root1);
 			stopForSecond(15);
 			// Make a new file in order to ensure all added file exist
-			File root2 = new File(rootDir);
+//			File root2 = new File(rootDir);
 			// Search for Makefile and makefile files
-			searchForMakefile(root2);
-			stopForSecond(15);
+//			searchForMakefile(root2);
+//			stopForSecond(15);
 			// Make a new file in order to ensure all added file exist
-			File root3 = new File(rootDir);
+//			File root3 = new File(rootDir);
 			// Search for .wasm and .wat
-			searchForWasmAndWat(root3, "post");
+//			searchForWasmAndWat(root3, "post");
 		}
 		saveArraylistFile(clonedrepo, "clonedrepo");
 		saveArraylistFile(cloneddate, "cloneddate");
+		savemetadata(metadata);
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -262,15 +296,18 @@ public class WASMIZER_class {
 		if (!file.exists()) {
 			try {
 				Process process = Runtime.getRuntime().exec(
-						"cmd.exe /c git clone --depth 1 --recurse-submodules --shallow-submodules " + url + " " + path);
+						"cmd.exe /c git clone --depth 1 --recurse-submodules --shallow-submodules " + url + " " + "repobase\\"+path);
 				try {
 					process.waitFor(timeout, TimeUnit.MILLISECONDS);
 				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
+				
 				clonedrepo.add(url);
-				cloneddate.add(datelist.get(repolist.indexOf(url)));
+				int index = repolist.indexOf(url);
+				cloneddate.add(pusheddatelist.get(index));
+				metadata.add(idlist.get(index)+","+foldernamelist.get(index)+","+repolist.get(index)+","+createddatelist.get(index)+","+pusheddatelist.get(index)+","+starscountlist.get(index)+","+forkscountlist.get(index)+","+sizelist.get(index));
 				stopForSecond(20);
 				return path;
 			} catch (IOException e) {
@@ -489,6 +526,8 @@ public class WASMIZER_class {
 		File file = new File(name + ".csv");
 		FileWriter fw = new FileWriter(file);
 		BufferedWriter bw = new BufferedWriter(fw);
+		bw.write(name);
+		bw.newLine();
 		for (int k = 0; k < list.size(); k++) {
 			bw.write(list.get(k));
 			bw.newLine();
@@ -496,10 +535,42 @@ public class WASMIZER_class {
 		bw.close();
 		fw.close();
 	}
-
+	
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// Function for saving in .csv file
+	public static void savemetadata(List<String> list) throws IOException {
+		File file = new File("metadata.csv");
+		FileWriter fw = new FileWriter(file);
+		BufferedWriter bw = new BufferedWriter(fw);
+		bw.write("Repository ID , Owner-Repository Name , Repository URL , Creation Date , Pushed date , Stars , Forks , Size");
+		bw.newLine();
+		for (int k = 0; k < list.size(); k++) {
+			bw.write(list.get(k));
+			bw.newLine();
+		}
+		bw.close();
+		fw.close();
+	}
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Function for reading from .csv file
 	public static List<String> readFile(String name) {
+		List<String> data = new ArrayList<String>();
+		try {
+			BufferedReader br = new BufferedReader(new FileReader(name + ".csv"));
+			String line;
+			while ((line = br.readLine()) != null) {
+				data.add(line);
+			}
+			br.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return data;
+	}
+
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// Function for reading from .csv file
+	public static List<String> readmetadata(String name) {
 		List<String> data = new ArrayList<String>();
 		List<String> list = new ArrayList<String>();
 		try {
@@ -514,7 +585,6 @@ public class WASMIZER_class {
 		}
 		return data;
 	}
-
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Function for removing existing folders
 	public static void runcommand(String command, long timeout) {
