@@ -52,10 +52,12 @@ public class WASMIZER_class {
 	public static List<String> pusheddatelist = new ArrayList<String>();
 	public static List<String> CMakeListpaths = new ArrayList<String>();
 	public static List<String> submodules;
-	public static List<String> watfiles = new ArrayList<String>();
-	public static List<String> wasmfiles = new ArrayList<String>();
+	public static List<String> prewatfiles = new ArrayList<String>();
+	public static List<String> prewasmfiles = new ArrayList<String>();
+	public static List<String> postwatfiles = new ArrayList<String>();
+	public static List<String> postwasmfiles = new ArrayList<String>();
 	public static List<String> symptopms = new ArrayList<String>();
-	public static int wasmcount = 0, watcount = 0, count;
+	public static int wasmcount = 0, watcount = 0, count, prewasmcount = 0, prewatcount = 0;;
 	public static String reponame, repolink, path, prepath, newFileName, s1;
 	public static String repokeywords, date, stars, forks, size, numOfSymptoms;
 
@@ -71,12 +73,16 @@ public class WASMIZER_class {
 		cloneAndCompile();
 
 		System.out.println("The End ... ");
-		System.out.println("\n\nNumber of .wasm files :" + wasmfiles.size());
-		System.out.println("\nNumber of .wat files :" + watfiles.size());
+		System.out.println("\n\nNumber of .wasm files before compile :" + prewasmfiles.size());
+		System.out.println("\nNumber of .wat files before compile :" + prewatfiles.size());
+		System.out.println("\n\nNumber of .wasm files after compile :" + postwasmfiles.size());
+		System.out.println("\nNumber of .wat files after compile :" + postwatfiles.size());
 
 		// Save .wasm and .wat files directories in the .csv files
-		saveArraylistFile(wasmfiles, "wasmdirectories");
-		saveArraylistFile(watfiles, "watdirectories");
+		saveArraylistFile(prewasmfiles, "prewasmdirectories");
+		saveArraylistFile(prewatfiles, "prewatdirectories");
+		saveArraylistFile(postwasmfiles, "prewasmdirectories");
+		saveArraylistFile(postwatfiles, "prewatdirectories");
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -86,12 +92,29 @@ public class WASMIZER_class {
 		String incomplete;
 		Map repocontentSearchResult;
 		double totalcount, totalcount2;
+		// Read the cloned data
 		clonedrepo = readFile("clonedrepo");
 		cloneddate = readFile("cloneddate");
-		metadata=readmetadata("metadata");
-		//clonedrepo.remove(0);
-		//cloneddate.remove(0);
-		//metadata.remove(0);
+		metadata = readmetadata("metadata");
+		if (clonedrepo.size() > 0) {
+			clonedrepo.remove(0);
+			cloneddate.remove(0);
+			metadata.remove(0);
+		}
+		// Read the .wasm and .wat directories of cloned repositories
+		prewasmfiles = readFile("prewasmdirectories");
+		prewatfiles = readFile("prewatdirectories");
+		postwasmfiles = readFile("postwasmdirectories");
+		postwatfiles = readFile("postwatdirectories");
+		if (prewasmfiles.size() > 0)
+			prewasmfiles.remove(0);
+		if (prewatfiles.size() > 0)
+			prewatfiles.remove(0);
+		if (postwasmfiles.size() > 0)
+			postwasmfiles.remove(0);
+		if (postwatfiles.size() > 0)
+			postwatfiles.remove(0);
+
 		String GITHUB_API_BASE_URL = "https://api.github.com/", GITHUB_API_SEARCH_CODE_PATH = "search/code?q=";
 		int i = 0;
 		do {
@@ -117,17 +140,16 @@ public class WASMIZER_class {
 				// Ignore forked repositories
 				String id = r.getAsJsonObject().get("id").toString();
 				String repourl = r.getAsJsonObject().get("html_url").toString();
-				String foldername=repourl.split("/")[repourl.split("/").length - 2] + "-"
+				String foldername = repourl.split("/")[repourl.split("/").length - 2] + "-"
 						+ repourl.split("/")[repourl.split("/").length - 1];
 				foldername = foldername.replace("\"", "");
 				String fork = r.getAsJsonObject().get("fork").toString();
-								String createddate = r.getAsJsonObject().get("created_at").toString();
+				String createddate = r.getAsJsonObject().get("created_at").toString();
 				String pusheddate = r.getAsJsonObject().get("pushed_at").toString();
 				String starscount = r.getAsJsonObject().get("stargazers_count").toString();
 				String size = r.getAsJsonObject().get("size").toString();
 				String forkscount = r.getAsJsonObject().get("forks_count").toString();
-			
-				
+
 				if (fork.equals("false")) {
 					// if repository is not cloned, add to list for cloning
 					if (!(clonedrepo.contains(repourl))) {
@@ -138,7 +160,7 @@ public class WASMIZER_class {
 						pusheddatelist.add(pusheddate);
 						starscountlist.add(starscount);
 						forkscountlist.add(forkscount);
-						sizelist.add(size);				
+						sizelist.add(size);
 					}
 					// if repository is cloned but pushed after previous clone
 					else if (!(cloneddate.get(clonedrepo.indexOf(repourl)).equals(pusheddate))) {
@@ -147,7 +169,6 @@ public class WASMIZER_class {
 						cloneddate.remove(index);
 						metadata.remove(index);
 						String folder = foldername;
-						
 
 						// Repository cloned before but has pushed after cloning, we delete existing
 						// files
@@ -169,7 +190,7 @@ public class WASMIZER_class {
 						pusheddatelist.add(pusheddate);
 						starscountlist.add(starscount);
 						forkscountlist.add(forkscount);
-						sizelist.add(size);	
+						sizelist.add(size);
 					}
 				}
 			});
@@ -241,7 +262,7 @@ public class WASMIZER_class {
 			String command5 = "cmd.exe /c cd wasm-wat-files-pre\\wat-files && md " + reponame + "";
 			runcommand(command5, 60);
 
-			String rootDir = "repobase\\"+ path + "\\";
+			String rootDir = "repobase\\" + path + "\\";
 
 			// Find submodules in a repository
 			submodules = new ArrayList<String>();
@@ -266,17 +287,17 @@ public class WASMIZER_class {
 			// Search for .wasm and .wat before compile
 			searchForWasmAndWat(root1, "pre");
 			// Search for CMakeLists.txt files
-//			searchForCMakefile(root1);
+			searchForCMakefile(root1);
 			stopForSecond(15);
 			// Make a new file in order to ensure all added file exist
-//			File root2 = new File(rootDir);
+			File root2 = new File(rootDir);
 			// Search for Makefile and makefile files
-//			searchForMakefile(root2);
-//			stopForSecond(15);
+			searchForMakefile(root2);
+			stopForSecond(15);
 			// Make a new file in order to ensure all added file exist
-//			File root3 = new File(rootDir);
+			File root3 = new File(rootDir);
 			// Search for .wasm and .wat
-//			searchForWasmAndWat(root3, "post");
+			searchForWasmAndWat(root3, "post");
 		}
 		saveArraylistFile(clonedrepo, "clonedrepo");
 		saveArraylistFile(cloneddate, "cloneddate");
@@ -295,19 +316,22 @@ public class WASMIZER_class {
 		File file = new File(path);
 		if (!file.exists()) {
 			try {
-				Process process = Runtime.getRuntime().exec(
-						"cmd.exe /c git clone --depth 1 --recurse-submodules --shallow-submodules " + url + " " + "repobase\\"+path);
+				Process process = Runtime.getRuntime()
+						.exec("cmd.exe /c git clone --depth 1 --recurse-submodules --shallow-submodules " + url + " "
+								+ "repobase\\" + path);
 				try {
 					process.waitFor(timeout, TimeUnit.MILLISECONDS);
 				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-				
+
 				clonedrepo.add(url);
 				int index = repolist.indexOf(url);
 				cloneddate.add(pusheddatelist.get(index));
-				metadata.add(idlist.get(index)+","+foldernamelist.get(index)+","+repolist.get(index)+","+createddatelist.get(index)+","+pusheddatelist.get(index)+","+starscountlist.get(index)+","+forkscountlist.get(index)+","+sizelist.get(index));
+				metadata.add(idlist.get(index) + "," + foldernamelist.get(index) + "," + repolist.get(index) + ","
+						+ createddatelist.get(index) + "," + pusheddatelist.get(index) + "," + starscountlist.get(index)
+						+ "," + forkscountlist.get(index) + "," + sizelist.get(index));
 				stopForSecond(20);
 				return path;
 			} catch (IOException e) {
@@ -322,7 +346,7 @@ public class WASMIZER_class {
 	// Function for searching CMakeList.txt files and running cmake
 	public static void searchForCMakefile(File root) {
 		File[] files = root.listFiles();
-		long timeout = 180 * 1000;
+		long timeout = 150 * 1000;
 		if (files != null) {
 			for (File file : files) {
 				if (file.isFile()) {
@@ -367,7 +391,7 @@ public class WASMIZER_class {
 	// Function for searching the Makefile/makefile files and running make
 	public static void searchForMakefile(File root) {
 		File[] files = root.listFiles();
-		long timeout = 180 * 1000;
+		long timeout = 150 * 1000;
 		if (files != null) {
 			for (File file : files) {
 				if (file.isFile()) {
@@ -410,11 +434,13 @@ public class WASMIZER_class {
 					String xx = file.getName().toString();
 					Path source = Paths.get(parentdir + "/" + file.getName().toString());
 					if (xx.endsWith(".wat")) {
-						watfiles.add(file.getAbsolutePath());
-						if (prepost.equals("pre"))
+						if (prepost.equals("pre")) {
+							prewatfiles.add(file.getAbsolutePath());
 							destination = Paths.get("wasm-wat-files-pre\\wat-files\\" + reponame);
-						else
+						} else {
+							postwatfiles.add(file.getAbsolutePath());
 							destination = Paths.get("wasm-wat-files\\wat-files\\" + reponame);
+						}
 						String newFileName = hash256(source);
 						newFileName = newFileName + ".wat";
 
@@ -428,11 +454,14 @@ public class WASMIZER_class {
 						} else
 							System.out.println("File exists");
 					} else if (xx.endsWith(".wasm")) {
-						wasmfiles.add(file.getAbsolutePath());
-						if (prepost.equals("pre"))
+
+						if (prepost.equals("pre")) {
+							prewasmfiles.add(file.getAbsolutePath());
 							destination = Paths.get("wasm-wat-files-pre\\wasm-files\\" + reponame);
-						else
+						} else {
+							postwasmfiles.add(file.getAbsolutePath());
 							destination = Paths.get("wasm-wat-files\\wasm-files\\" + reponame);
+						}
 						String newFileName = hash256(source);
 						newFileName = newFileName + ".wasm";
 						File f2 = new File(destination + "\\" + newFileName);
@@ -535,14 +564,15 @@ public class WASMIZER_class {
 		bw.close();
 		fw.close();
 	}
-	
+
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Function for saving in .csv file
 	public static void savemetadata(List<String> list) throws IOException {
 		File file = new File("metadata.csv");
 		FileWriter fw = new FileWriter(file);
 		BufferedWriter bw = new BufferedWriter(fw);
-		bw.write("Repository ID , Owner-Repository Name , Repository URL , Creation Date , Pushed date , Stars , Forks , Size");
+		bw.write(
+				"Repository ID , Owner-Repository Name , Repository URL , Creation Date , Pushed date , Stars , Forks , Size");
 		bw.newLine();
 		for (int k = 0; k < list.size(); k++) {
 			bw.write(list.get(k));
@@ -551,6 +581,7 @@ public class WASMIZER_class {
 		bw.close();
 		fw.close();
 	}
+
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Function for reading from .csv file
 	public static List<String> readFile(String name) {
@@ -585,6 +616,7 @@ public class WASMIZER_class {
 		}
 		return data;
 	}
+
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Function for removing existing folders
 	public static void runcommand(String command, long timeout) {
