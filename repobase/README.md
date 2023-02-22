@@ -1,3 +1,3 @@
 # 
 
-This folder contains repositories with stars less than 20
+This folder contains cloned repositories
