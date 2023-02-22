@@ -81,8 +81,8 @@ public class WASMIZER_class {
 		// Save .wasm and .wat files directories in the .csv files
 		saveArraylistFile(prewasmfiles, "prewasmdirectories");
 		saveArraylistFile(prewatfiles, "prewatdirectories");
-		saveArraylistFile(postwasmfiles, "prewasmdirectories");
-		saveArraylistFile(postwatfiles, "prewatdirectories");
+		saveArraylistFile(postwasmfiles, "postwasmdirectories");
+		saveArraylistFile(postwatfiles, "postwatdirectories");
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////
