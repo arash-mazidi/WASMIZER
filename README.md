@@ -49,7 +49,7 @@ Furthermore, name and date of all cloned repositories will be stored in the clon
 
 3- It clones the repositories which are in the WASMrepositories.csv.
 
-4- It searches for CMakeLists.txt and Makefile/makefile and run the emscripten.
+4- It searches for build and compilation files and run the compiler on them. For instance, we want to compile the C/C++ projects to WebAssembly and search for CMakeLists.txt and Makefile/makefile, then run the Emscripten.
 
 5- It searches and collects for .wasm and .wat files, then hash their name based on their content and copy them in the wasm-wat-files folder.
 
