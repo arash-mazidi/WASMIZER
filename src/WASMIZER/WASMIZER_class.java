@@ -4,22 +4,28 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.Random;
+import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.fluent.Content;
 import org.apache.http.client.fluent.Request;
 import org.apache.poi.ss.formula.functions.Replace;
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import java.nio.charset.Charset;
 import java.nio.file.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -31,6 +37,8 @@ import org.eclipse.jgit.errors.ConfigInvalidException;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.lib.RepositoryBuilder;
 import org.eclipse.jgit.submodule.SubmoduleWalk;
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -54,14 +62,19 @@ public class WASMIZER_class {
 	public static List<String> submodules;
 	public static List<String> prewatfiles = new ArrayList<String>();
 	public static List<String> prewasmfiles = new ArrayList<String>();
+	public static List<String> pretemp = new ArrayList<String>();
+	public static List<String> posttemp = new ArrayList<String>();
 	public static List<String> postwatfiles = new ArrayList<String>();
 	public static List<String> postwasmfiles = new ArrayList<String>();
 	public static List<String> symptopms = new ArrayList<String>();
-	public static int wasmcount = 0, watcount = 0, count, prewasmcount = 0, prewatcount = 0;;
+	public static List<String> newfiles = new ArrayList<String>();
+	public static List<String> newfilessource = new ArrayList<String>();
+	public static int wasmcount = 0, watcount = 0, count, prewasmcount = 0, prewatcount = 0, fcount = 0, r = 0;
 	public static String reponame, repolink, path, prepath, newFileName, s1;
-	public static String repokeywords, date, stars, forks, size, numOfSymptoms;
+	public static String repokeywords, date, stars, forks, size, numOfSymptoms, cmakecommand, makecommand;
+	public static File mainroot;
 
-	public static void main(String[] args) throws IOException, URISyntaxException {
+	public static void main(String[] args) throws IOException, URISyntaxException, JSONException {
 
 		// Using GSON to parse or print response JSON.
 		gson = new GsonBuilder().setPrettyPrinting().create();
@@ -83,6 +96,8 @@ public class WASMIZER_class {
 		saveArraylistFile(prewatfiles, "prewatdirectories");
 		saveArraylistFile(postwasmfiles, "postwasmdirectories");
 		saveArraylistFile(postwatfiles, "postwatdirectories");
+		saveArraylistFile(newfiles, "newfiles");
+		saveArraylistFile(newfilessource, "newfilesources");
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -174,13 +189,14 @@ public class WASMIZER_class {
 						// files
 						String comm0 = "cmd.exe /c cd repobase && rd /s /q " + folder + "";
 						runcommand(comm0, 120);
-						String comm1 = "cmd.exe /c cd wasm-wat-files-pre\\wat-files && rd /s /q " + folder + "";
+						String comm1 = "cmd.exe /c cd output\\wasm-wat-files-pre\\wat-files && rd /s /q " + folder + "";
 						runcommand(comm1, 60);
-						String comm2 = "cmd.exe /c cd wasm-wat-files-pre\\wasm-files && rd /s /q " + folder + "";
+						String comm2 = "cmd.exe /c cd output\\wasm-wat-files-pre\\wasm-files && rd /s /q " + folder
+								+ "";
 						runcommand(comm2, 60);
-						String comm3 = "cmd.exe /c cd wasm-wat-files\\wat-files && rd /s /q " + folder + "";
+						String comm3 = "cmd.exe /c cd output\\wasm-wat-files\\wat-files && rd /s /q " + folder + "";
 						runcommand(comm3, 60);
-						String comm4 = "cmd.exe /c cd wasm-wat-files\\wasm-files && rd /s /q " + folder + "";
+						String comm4 = "cmd.exe /c cd output\\wasm-wat-files\\wasm-files && rd /s /q " + folder + "";
 						runcommand(comm4, 60);
 
 						idlist.add(id);
@@ -234,7 +250,7 @@ public class WASMIZER_class {
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Function for cloning and compiling the repositories
-	public static void cloneAndCompile() throws IOException {
+	public static void cloneAndCompile() throws IOException, JSONException {
 
 		for (count = 0; count < repolistBasedcode.size(); count++) {
 			repolink = repolistBasedcode.get(count);
@@ -253,13 +269,13 @@ public class WASMIZER_class {
 				continue;
 			// create folders with the project name for .wasm and .wat files in the
 			// wasm-wat-files, and wasm-wat-files-pre folders
-			String command2 = "cmd.exe /c cd wasm-wat-files\\wasm-files && md " + reponame + "";
+			String command2 = "cmd.exe /c cd output\\wasm-wat-files\\wasm-files && md " + reponame + "";
 			runcommand(command2, 60);
-			String command3 = "cmd.exe /c cd wasm-wat-files\\wat-files && md " + reponame + "";
+			String command3 = "cmd.exe /c cd output\\wasm-wat-files\\wat-files && md " + reponame + "";
 			runcommand(command3, 60);
-			String command4 = "cmd.exe /c cd wasm-wat-files-pre\\wasm-files && md " + reponame + "";
+			String command4 = "cmd.exe /c cd output\\wasm-wat-files-pre\\wasm-files && md " + reponame + "";
 			runcommand(command4, 60);
-			String command5 = "cmd.exe /c cd wasm-wat-files-pre\\wat-files && md " + reponame + "";
+			String command5 = "cmd.exe /c cd output\\wasm-wat-files-pre\\wat-files && md " + reponame + "";
 			runcommand(command5, 60);
 
 			String rootDir = "repobase\\" + path + "\\";
@@ -283,21 +299,20 @@ public class WASMIZER_class {
 				}
 			}
 
-			File root1 = new File(rootDir);
+			mainroot = new File(rootDir);
 			// Search for .wasm and .wat before compile
-			searchForWasmAndWat(root1, "pre");
+			searchForWasmAndWat(mainroot, "pre");
 			// Search for CMakeLists.txt files
-			searchForCMakefile(root1);
+			r = 0;
+			searchForCMakefile(mainroot);
+
 			stopForSecond(15);
-			// Make a new file in order to ensure all added file exist
-			File root2 = new File(rootDir);
 			// Search for Makefile and makefile files
-			searchForMakefile(root2);
-			stopForSecond(15);
-			// Make a new file in order to ensure all added file exist
-			File root3 = new File(rootDir);
+			r = 0;
+			searchForMakefile(mainroot);
+			stopForSecond(20);
 			// Search for .wasm and .wat
-			searchForWasmAndWat(root3, "post");
+			searchForWasmAndWat(mainroot, "post");
 		}
 		saveArraylistFile(clonedrepo, "clonedrepo");
 		saveArraylistFile(cloneddate, "cloneddate");
@@ -306,7 +321,7 @@ public class WASMIZER_class {
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Function for cloning repositories
-	public static String clone(String url) {
+	public static String clone(String url) throws JSONException {
 
 		long timeout = 240 * 1000; // 240 seconds
 		// Clone a git repository and return the path where it was cloned
@@ -326,12 +341,35 @@ public class WASMIZER_class {
 					e.printStackTrace();
 				}
 
+				// Finding the commit sha and add it to metadata
+				String url2 = url;
+				url2 = url2.replace("https://github.com/", "");
+				url2 = url2.replace("\"", "");
+				url2 = "https://api.github.com/repos/" + url2 + "/commits";
+
+				URL urll = new URL(url2);
+				HttpURLConnection con = (HttpURLConnection) urll.openConnection();
+				con.setRequestMethod("GET");
+				con.setRequestProperty("Accept", "application/vnd.github.v3+json");
+
+				// Read the API response and parse the JSON data
+				BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+				StringBuilder response = new StringBuilder();
+				String inputLine;
+				while ((inputLine = in.readLine()) != null) {
+					response.append(inputLine);
+				}
+				in.close();
+				JSONArray jsonArray2 = new JSONArray(response.toString());
+				org.json.JSONObject commit = jsonArray2.getJSONObject(0);
+				String commitSHA = commit.getString("sha");
+
 				clonedrepo.add(url);
 				int index = repolist.indexOf(url);
 				cloneddate.add(pusheddatelist.get(index));
 				metadata.add(idlist.get(index) + "," + foldernamelist.get(index) + "," + repolist.get(index) + ","
 						+ createddatelist.get(index) + "," + pusheddatelist.get(index) + "," + starscountlist.get(index)
-						+ "," + forkscountlist.get(index) + "," + sizelist.get(index));
+						+ "," + forkscountlist.get(index) + "," + sizelist.get(index) + "," + commitSHA);
 				stopForSecond(20);
 				return path;
 			} catch (IOException e) {
@@ -344,9 +382,10 @@ public class WASMIZER_class {
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Function for searching CMakeList.txt files and running cmake
-	public static void searchForCMakefile(File root) {
+	public static void searchForCMakefile(File root) throws IOException {
 		File[] files = root.listFiles();
-		long timeout = 150 * 1000;
+		int cc1 = 0, cc2 = 0;
+		long timeout = 200 * 1000;
 		if (files != null) {
 			for (File file : files) {
 				if (file.isFile()) {
@@ -356,18 +395,44 @@ public class WASMIZER_class {
 					parentdir = parentdir.replace(xx, "");
 					if (xx.equals("CMakeLists.txt")) {
 						if (!(is_insubmodule(cmakefiledir))) {
+							pretemp.clear();
+							posttemp.clear();
+							fcount = 0;
+							cc1 = countwasmwatfiles(mainroot, "pre");
+							String command;
 							try {
-								String command = "cmd.exe /c docker run --rm -v " + parentdir
-										+ ":/src  emscripten/emsdk emcmake cmake";
+								command = "cmd.exe /c docker run --rm -v " + parentdir + ":/src  " + cmakecommand;
 								Process p = Runtime.getRuntime().exec(command);
 								p.waitFor(timeout, TimeUnit.MILLISECONDS);
+
 							} catch (IOException e) {
 								e.printStackTrace();
 							} catch (InterruptedException e) {
 								e.printStackTrace();
 							}
-							stopForSecond(5);
-							System.out.println("\nCMake command is running ...");
+							stopForSecond(15);
+							r++;
+							System.out.println("\nCMake command is running " + r + " ...");
+							// counting the files after command
+							fcount = 0;
+							cc2 = countwasmwatfiles(mainroot, "post");
+							if (cc1 != cc2) {
+								posttemp.removeAll(pretemp);
+								for (String entity : posttemp) {
+									if (entity.endsWith(".wasm")) {
+										String hashed = hash256((Paths.get(entity)));
+										hashed = hashed + ".wasm";
+										newfiles.add(hashed);
+										newfilessource.add(cmakefiledir);
+									} else if (entity.endsWith(".wat")) {
+										String hashed = hash256((Paths.get(entity)));
+										hashed = hashed + ".wat";
+										newfiles.add(hashed);
+										newfilessource.add(cmakefiledir);
+									}
+								}
+							}
+
 						}
 					}
 				} else if (file.isDirectory())
@@ -389,9 +454,10 @@ public class WASMIZER_class {
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Function for searching the Makefile/makefile files and running make
-	public static void searchForMakefile(File root) {
+	public static void searchForMakefile(File root) throws IOException {
 		File[] files = root.listFiles();
-		long timeout = 150 * 1000;
+		int cc1 = 0, cc2 = 0;
+		long timeout = 240 * 1000;
 		if (files != null) {
 			for (File file : files) {
 				if (file.isFile()) {
@@ -400,18 +466,43 @@ public class WASMIZER_class {
 					String xx = file.getName().toString();
 					parentdir = parentdir.replace(xx, "");
 					if (xx.equals("makefile") || xx.equals("Makefile")) {
+						// counting the files before command
+						pretemp.clear();
+						posttemp.clear();
+						fcount = 0;
+						cc1 = countwasmwatfiles(mainroot, "pre");
 						try {
-							String command = "cmd.exe /c docker run --rm -v " + parentdir
-									+ ":/src  emscripten/emsdk emmake make";
+							String command = "cmd.exe /c docker run --rm -v " + parentdir + ":/src  " + makecommand;
 							Process p = Runtime.getRuntime().exec(command);
 							p.waitFor(timeout, TimeUnit.MILLISECONDS);
+
 						} catch (IOException e) {
 							e.printStackTrace();
 						} catch (InterruptedException e) {
 							e.printStackTrace();
 						}
-						stopForSecond(5);
-						System.out.println("\nMake command is running ...");
+						stopForSecond(20);
+						r++;
+						System.out.println("\nMake command is running " + r + " ...");
+						// counting the files after command
+						fcount = 0;
+						cc2 = countwasmwatfiles(mainroot, "post");
+						if (cc1 != cc2) {
+							posttemp.removeAll(pretemp);
+							for (String entity : posttemp) {
+								if (entity.endsWith(".wasm")) {
+									String hashed = hash256((Paths.get(entity)));
+									hashed = hashed + ".wasm";
+									newfiles.add(hashed);
+									newfilessource.add(dirr);
+								} else if (entity.endsWith(".wat")) {
+									String hashed = hash256((Paths.get(entity)));
+									hashed = hashed + ".wat";
+									newfiles.add(hashed);
+									newfilessource.add(dirr);
+								}
+							}
+						}
 					}
 				} else if (file.isDirectory())
 					searchForMakefile(file);
@@ -436,20 +527,27 @@ public class WASMIZER_class {
 					if (xx.endsWith(".wat")) {
 						if (prepost.equals("pre")) {
 							prewatfiles.add(file.getAbsolutePath());
-							destination = Paths.get("wasm-wat-files-pre\\wat-files\\" + reponame);
+							destination = Paths.get("output\\wasm-wat-files-pre\\wat-files\\" + reponame);
 						} else {
 							postwatfiles.add(file.getAbsolutePath());
-							destination = Paths.get("wasm-wat-files\\wat-files\\" + reponame);
+							destination = Paths.get("output\\wasm-wat-files\\wat-files\\" + reponame);
 						}
 						String newFileName = hash256(source);
 						newFileName = newFileName + ".wat";
-
 						File f2 = new File(destination + "\\" + newFileName);
 						Path newPath = Paths.get(f2.toString());
 						if (!f2.exists()) {
 							Files.copy(source, newPath);
-							String command = "cmd.exe /c cd " + destination + " && wat2wasm " + newFileName;
-							runcommand(command, 60);
+							stopForSecond(5);
+							if (prepost.equals("pre")) {
+								String command = "cmd.exe /c cd output\\wasm-wat-files-pre\\wat-files\\" + reponame
+										+ "\\ && C:\\wabt\\bin\\wat2wasm --enable-all \"" + newFileName + "\"";
+								runcommand(command, 60);
+							} else {
+								String command = "cmd.exe /c cd output\\wasm-wat-files\\wat-files\\" + reponame
+										+ "\\ && C:\\wabt\\bin\\wat2wasm --enable-all \"" + newFileName + "\"";
+								runcommand(command, 60);
+							}
 							saveMetafiles(destination, newFileName, dirr);
 						} else
 							System.out.println("File exists");
@@ -457,10 +555,10 @@ public class WASMIZER_class {
 
 						if (prepost.equals("pre")) {
 							prewasmfiles.add(file.getAbsolutePath());
-							destination = Paths.get("wasm-wat-files-pre\\wasm-files\\" + reponame);
+							destination = Paths.get("output\\wasm-wat-files-pre\\wasm-files\\" + reponame);
 						} else {
 							postwasmfiles.add(file.getAbsolutePath());
-							destination = Paths.get("wasm-wat-files\\wasm-files\\" + reponame);
+							destination = Paths.get("output\\wasm-wat-files\\wasm-files\\" + reponame);
 						}
 						String newFileName = hash256(source);
 						newFileName = newFileName + ".wasm";
@@ -544,6 +642,8 @@ public class WASMIZER_class {
 				String symp = "symptom" + g;
 				symptopms.add((String) jsonObject.get(symp));
 			}
+			cmakecommand = (String) jsonObject.get("cmakecommand");
+			makecommand = (String) jsonObject.get("makecommand");
 		} catch (IOException | ParseException e) {
 			e.printStackTrace();
 		}
@@ -568,11 +668,11 @@ public class WASMIZER_class {
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Function for saving in .csv file
 	public static void savemetadata(List<String> list) throws IOException {
-		File file = new File("metadata.csv");
+		File file = new File("output\\metadata.csv");
 		FileWriter fw = new FileWriter(file);
 		BufferedWriter bw = new BufferedWriter(fw);
 		bw.write(
-				"Repository ID , Owner-Repository Name , Repository URL , Creation Date , Pushed date , Stars , Forks , Size");
+				"Repository ID , Owner-Repository Name , Repository URL , Creation Date , Pushed date , Stars , Forks , Size, Commit SHA");
 		bw.newLine();
 		for (int k = 0; k < list.size(); k++) {
 			bw.write(list.get(k));
@@ -603,9 +703,8 @@ public class WASMIZER_class {
 	// Function for reading from .csv file
 	public static List<String> readmetadata(String name) {
 		List<String> data = new ArrayList<String>();
-		List<String> list = new ArrayList<String>();
 		try {
-			BufferedReader br = new BufferedReader(new FileReader(name + ".csv"));
+			BufferedReader br = new BufferedReader(new FileReader("output\\" + name + ".csv"));
 			String line;
 			while ((line = br.readLine()) != null) {
 				data.add(line);
@@ -649,6 +748,28 @@ public class WASMIZER_class {
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Function for checking Internet connection before cloning the repository
+	public static int countwasmwatfiles(File root, String pp) throws IOException {
+		File[] files = root.listFiles();
+
+		if (files != null) {
+			for (File file : files) {
+				if (file.isFile()) {
+					if (file.getName().toString().endsWith(".wasm")) {
+						fcount++;
+						if (pp.equals("pre"))
+							pretemp.add(file.getAbsolutePath());
+						else
+							posttemp.add(file.getAbsolutePath());
+					}
+				} else if (file.isDirectory())
+					countwasmwatfiles(file, pp);
+			}
+		}
+		return fcount;
+	}
+
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Function for making a REST GET call for this URL using Apache http client
 	private static Map makeRESTCall(String restUrl, String acceptHeaderValue)
 			throws ClientProtocolException, IOException {
@@ -669,5 +790,4 @@ public class WASMIZER_class {
 	private static Map makeRESTCall(String restUrl) throws ClientProtocolException, IOException {
 		return makeRESTCall(restUrl, null);
 	}
-
 }

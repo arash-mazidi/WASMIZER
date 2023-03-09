@@ -34,9 +34,12 @@ Further, there is a lib folder that contains libraries that are needed for Wasmi
 
 Then, you can run the Wasmizer by running the WASMIZER/blob/main/src/WASMIZER/WASMIZER_class.java.
 
-Wasmizer will clone the repositories on the repobase folder. In addition, there are two folders wasm-wat-files and wasm-wat-files-pre that contains wasm and wat files after and before compilation, respectively.
+Wasmizer will clone the repositories on the repobase folder. In addition, the output of the Wasmizer that are binary files are in the output folder. In the output folder, there are a metadata.csv file and two folders wasm-wat-files and wasm-wat-files-pre.
+* metadata.csv contains information about the repositories that generated binary files such as name, url, creation date, last pushed date, stars, forsk, size, commit sha, etc.
+* wasm-wat-files contains binary files after comilation for each repository.
+* wasm-wat-files-pre contains binary files bedore compilation for each repository.
 
-Furthermore, name and date of all cloned repositories will be stored in the clonedrepo.csv and cloneddate.csv files, respectively. After compilation, you will have a meta data such as name, url, stars, and so on in the metadata.csv.
+Furthermore, name and date of all cloned repositories will be stored in the clonedrepo.csv and cloneddate.csv files, respectively.
 
 
 # How Wasmizer works?
