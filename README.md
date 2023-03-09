@@ -37,7 +37,7 @@ Then, you can run the Wasmizer by running the WASMIZER/blob/main/src/WASMIZER/WA
 Wasmizer will clone the repositories on the repobase folder. In addition, the output of the Wasmizer that are binary files are in the output folder. In the output folder, there are a metadata.csv file and two folders wasm-wat-files and wasm-wat-files-pre.
 * metadata.csv contains information about the repositories that generated binary files such as name, url, creation date, last pushed date, stars, forsk, size, commit sha, etc.
 * wasm-wat-files contains binary files after comilation for each repository.
-* wasm-wat-files-pre contains binary files bedore compilation for each repository.
+* wasm-wat-files-pre contains binary files before compilation for each repository.
 
 Furthermore, name and date of all cloned repositories will be stored in the clonedrepo.csv and cloneddate.csv files, respectively.
 
@@ -49,7 +49,7 @@ Furthermore, name and date of all cloned repositories will be stored in the clon
 
 3- It clones the repositories which are in the WASMrepositories.csv.
 
-4- It searches for build and compilation files and run the compiler on them. For instance, we want to compile the C/C++ projects to WebAssembly and search for CMakeLists.txt and Makefile/makefile, then run the Emscripten.
+4- It searches for build and compilation files and run the compiler on them. For instance, we use wasmizer to compile the C/C++ projects to WebAssembly, therefore it searches for CMakeLists.txt and Makefile/makefile, then run the Emscripten. 
 
 5- It searches and collects the .wasm and .wat files, then hash their name based on their content and copy them in the output\\wasm-wat-files folder.
 
