@@ -71,7 +71,8 @@ public class WASMIZER_class {
 	public static List<String> newfilessource = new ArrayList<String>();
 	public static int wasmcount = 0, watcount = 0, count, prewasmcount = 0, prewatcount = 0, fcount = 0, r = 0;
 	public static String reponame, repolink, path, prepath, newFileName, s1;
-	public static String repokeywords, date, stars, forks, size, numOfSymptoms, cmakecommand, makecommand;
+	public static String repokeywords, date, stars, forks, size, numOfSymptoms, precompilation_command,
+			compilation_command, precompilation_sourcefile, compilation_sourcefile;
 	public static File mainroot;
 
 	public static void main(String[] args) throws IOException, URISyntaxException, JSONException {
@@ -302,14 +303,17 @@ public class WASMIZER_class {
 			mainroot = new File(rootDir);
 			// Search for .wasm and .wat before compile
 			searchForWasmAndWat(mainroot, "pre");
-			// Search for CMakeLists.txt files
-			r = 0;
-			searchForCMakefile(mainroot);
-
+			// Search for precompilation files and run them
+			if (precompilation_command.length() != 0 || precompilation_sourcefile.length() != 0) {
+				r = 0;
+				preCompilation(mainroot);
+			}
 			stopForSecond(15);
-			// Search for Makefile and makefile files
-			r = 0;
-			searchForMakefile(mainroot);
+			// Search for compilation files and compile them
+			if (compilation_command.length() != 0 || compilation_sourcefile.length() != 0) {
+				r = 0;
+				Compilation(mainroot);
+			}
 			stopForSecond(20);
 			// Search for .wasm and .wat
 			searchForWasmAndWat(mainroot, "post");
@@ -381,8 +385,8 @@ public class WASMIZER_class {
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// Function for searching CMakeList.txt files and running cmake
-	public static void searchForCMakefile(File root) throws IOException {
+	// Function for searching preCompilation files and running precomilation command
+	public static void preCompilation(File root) throws IOException {
 		File[] files = root.listFiles();
 		int cc1 = 0, cc2 = 0;
 		long timeout = 200 * 1000;
@@ -393,7 +397,7 @@ public class WASMIZER_class {
 					String parentdir = cmakefiledir;
 					String xx = file.getName().toString();
 					parentdir = parentdir.replace(xx, "");
-					if (xx.equals("CMakeLists.txt")) {
+					if (xx.equals(precompilation_sourcefile)) {
 						if (!(is_insubmodule(cmakefiledir))) {
 							pretemp.clear();
 							posttemp.clear();
@@ -401,7 +405,8 @@ public class WASMIZER_class {
 							cc1 = countwasmwatfiles(mainroot, "pre");
 							String command;
 							try {
-								command = "cmd.exe /c docker run --rm -v " + parentdir + ":/src  " + cmakecommand;
+								command = "cmd.exe /c docker run --rm -v " + parentdir + ":/src  "
+										+ precompilation_command;
 								Process p = Runtime.getRuntime().exec(command);
 								p.waitFor(timeout, TimeUnit.MILLISECONDS);
 
@@ -436,7 +441,7 @@ public class WASMIZER_class {
 						}
 					}
 				} else if (file.isDirectory())
-					searchForCMakefile(file);
+					preCompilation(file);
 			}
 		}
 	}
@@ -453,8 +458,8 @@ public class WASMIZER_class {
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// Function for searching the Makefile/makefile files and running make
-	public static void searchForMakefile(File root) throws IOException {
+	// Function for searching the Compilation files and running compilation command
+	public static void Compilation(File root) throws IOException {
 		File[] files = root.listFiles();
 		int cc1 = 0, cc2 = 0;
 		long timeout = 240 * 1000;
@@ -465,14 +470,15 @@ public class WASMIZER_class {
 					String parentdir = dirr;
 					String xx = file.getName().toString();
 					parentdir = parentdir.replace(xx, "");
-					if (xx.equals("makefile") || xx.equals("Makefile")) {
+					if (xx.equals(compilation_sourcefile) || xx.equals(compilation_sourcefile.toLowerCase())) {
 						// counting the files before command
 						pretemp.clear();
 						posttemp.clear();
 						fcount = 0;
 						cc1 = countwasmwatfiles(mainroot, "pre");
 						try {
-							String command = "cmd.exe /c docker run --rm -v " + parentdir + ":/src  " + makecommand;
+							String command = "cmd.exe /c docker run --rm -v " + parentdir + ":/src  "
+									+ compilation_command;
 							Process p = Runtime.getRuntime().exec(command);
 							p.waitFor(timeout, TimeUnit.MILLISECONDS);
 
@@ -505,7 +511,7 @@ public class WASMIZER_class {
 						}
 					}
 				} else if (file.isDirectory())
-					searchForMakefile(file);
+					Compilation(file);
 			}
 		}
 	}
@@ -642,8 +648,10 @@ public class WASMIZER_class {
 				String symp = "symptom" + g;
 				symptopms.add((String) jsonObject.get(symp));
 			}
-			cmakecommand = (String) jsonObject.get("cmakecommand");
-			makecommand = (String) jsonObject.get("makecommand");
+			precompilation_command = (String) jsonObject.get("precompilation_command");
+			compilation_command = (String) jsonObject.get("compilation_command");
+			precompilation_sourcefile = (String) jsonObject.get("precompilation_sourcefile");
+			compilation_sourcefile = (String) jsonObject.get("compilation_sourcefile");
 		} catch (IOException | ParseException e) {
 			e.printStackTrace();
 		}

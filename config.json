@@ -13,6 +13,8 @@
 	"symptom5":"%22emsdk%22",
 	"symptom6":"%22-target%20cheerp-wasm%22",
 	"symptom7":"%22--target%3Dwasm32%22",
-	"cmakecommand":"emscripten/emsdk emcmake cmake -D CMAKE_BUILD_TYPE=Debug",
-	"makecommand":"emscripten/emsdk emmake make --debug=abvijm"
+	"precompilation_command":"emscripten/emsdk emcmake cmake -D CMAKE_BUILD_TYPE=Debug",
+	"compilation_command":"emscripten/emsdk emmake make --debug=abvijm",
+	"precompilation_sourcefile":"CMakeLists.txt",
+	"compilation_sourcefile":"Makefile"
 }
