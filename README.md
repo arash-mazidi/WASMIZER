@@ -2,17 +2,23 @@
 This repository contains the software artifact for the paper "Wasmizer: Curating WebAssembly-driven Projects on GitHub".
 
 ## What is Wasmizer?
-A tool that regularly mines GitHub projects and makes an up-to-date dataset of WebAssembly sources.
+Wasmizer, a tool that regularly collects WebAssembly-driven projects on GitHub, compiles them, and curates an up-to-date and growing dataset of WebAssembly sources and binaries.
 
 Wasmizer has two main phases:
 
 _1. Repository collection_
 
-It uses Github search API (https://docs.github.com/en/rest/search?apiVersion=2022-11-28) to collect repositories based on parameters in the configuration file. 
+It identifies C and C++ projects on GitHub using Github search API (https://docs.github.com/en/rest/search?apiVersion=2022-11-28). There are some limitations on the search API such as rate limitation that we make a delay between requests to overcome this limitation. Another limitation is the maximum number of retrieved repositories in the search API that is 1000. We overcome this limitation by defining short period of date to have less than 1000 repositories. In addition, each page includes 100 repositories and we use a loop to have repositories in all pages.
+We excluded the forks of another repository to prevent duplicate projects.
+We had to select GitHub projects as, practically, we cannot analyse all the C or C++ projects. Therefore, we set up several selection criteria such as WebAssembly-related keywords, minimum number of stars and forks, minimum size of the projects, date of the last pushed, and WebAssembly symptoms in the config.json. It firstly collect projects based on the keywords, then filters the projects based on the symptoms in their code.
 
 _2. Compilation_
 
-In order to use Wasmizer in compilation phase, the necessary tools for compilation and build tools should be installed. For example, wasmizer is initially built to compile C/C++ to WebAssembly and therefore we use Emscripten. You can use https://emscripten.org/docs/getting_started/downloads.html to install emscripten. We used emscripten docker image. In addition, in order to convert wat files to wasm files, you need to install wat2wasm tool. You can use https://github.com/WebAssembly/wabt for this goal.
+In the compilation phase, Wasmizer clones the target repositories as long as they are not already compiled or it is pushed after the previous compilation date. We need to install the necessary tools for compilation and build tools. As Wasmizer is initially built to compile C/C++ projects to WebAssembly and therefore we use Emscripten (https://emscripten.org/docs/getting_started/downloads.html | We used Docker image). In addition, In addition, in order to convert wat files to wasm files, you need to install wat2wasm tool. You can use https://github.com/WebAssembly/wabt for this goal. 
+It then searches for precompilation and compilation source files and automatically compiles each project based on the compilation commands. We identified each CMakeLists.txt file, indicating the use of the cmake build system, we run Emscripten’s cmake wrapper (emcmake). Then, for each Makefile, either resulting from the previous step, or standalone, we run Emscripten’s make wrapper (emmake). It should be noted, compilation source files and commands are stored in the config.json file. Therefore, Wasmizer can be adapted to a different language such as rust by replacing the compilation commands in the config.json file. We also use github commit API in order to retrieve the commit sha of the projects. We consider the latest commit, so the first commit in the retrieved list will be the target commit. Then, we get the commit sha and store it in the metadata.csv file. 
+
+After applying the compilation phase to all projects, it looks for files that are named with either a .wasm or a .wat extension, indicating that they are WebAssembly files. We try to convert all .wat files found into their binary version (.wasm) relying on the wat2wasm tool from the WebAssembly Binary Toolkit, configured with the --enable-all flag to enable all available WebAssembly extensions. We then store all .wasm files in a new directory (wasm-wat-files), under a name composed of the SHA-256 sum of their content. This is to ensure that duplicate files are only present once in the dataset. We store a metadata.csv contains information of the binary files such as name, url, forks, stars, size, creation date, last commit date, commit sha etc.
+Wasmizer also separates the binary files that were already exist and new generated binary files in two folders (wasm-wat-files-pre and wasm-wat-files). Finally, we share the output (binary files and metadata file) via https://tucloud.tu-clausthal.de/index.php/s/MMRQMEZm66GRGXI with password: wasmizer.
 
 
 ## How to configure Wasmizer?
@@ -78,11 +84,14 @@ Furthermore, name and date of all cloned repositories will be stored in the clon
 
 ## How dataset is structured?
 
-Wasmizer will clone the repositories into repobase folder. 
+Wasmizer will clone the repositories into repobase folder and compiled projects will be there. 
 
 The output of the Wasmizer that are binary files are in the output folder. In the output folder, there are a metadata.csv file and two folders wasm-wat-files and wasm-wat-files-pre.
 
 * _metadata.csv_ contains information about the repositories that generated binary files such as name, url, creation date, last pushed date, stars, forsk, size, commit sha, etc.
+A sample of metadata file:
+Repository ID | Owner-Repository Name      | Repository URL                                | Creation Date       |	Pushed Date       |	Stars|Forks|Size|Commit SHA
+163699219	  |	GoogleChromeLabs-webm-wasm | https://github.com/GoogleChromeLabs/webm-wasm |2018-12-31T21:50:13Z |2023-01-03T15:48:23Z|  352 |	54 |1225|271bf27496bb8444472786d2676c4c5a4ab7902b
 
 * _wasm-wat-files_ contains folders with the name of repoOwner-repoName (e.g., RepoOwner: X, and RepoName: Y --> foldername: X-Y). They contain binary files after comilation for the repository.
 
