@@ -90,10 +90,8 @@ The output of the Wasmizer that are binary files are in the output folder. In th
 
 * _metadata.csv_ contains information about the repositories that generated binary files such as name, url, creation date, last pushed date, stars, forsk, size, commit sha, etc.
 
-A sample of metadata file:
+A sample of metadata file header:
 Repository ID | Owner-Repository Name | Repository URL | Creation Date | Pushed Date | Stars| Forks| Size| Commit SHA
---------------------------------------------------------------------------------------------------------------------------------------------------------------------
-163699219 |	GoogleChromeLabs-webm-wasm | https://github.com/GoogleChromeLabs/webm-wasm |2018-12-31T21:50:13Z |2023-01-03T15:48:23Z| 352 | 54 |1225|271bf27496bb8444472786d2676c4c5a4ab7902b
 
 * _wasm-wat-files_ contains folders with the name of repoOwner-repoName (e.g., RepoOwner: X, and RepoName: Y --> foldername: X-Y). They contain binary files after comilation for the repository.
 
