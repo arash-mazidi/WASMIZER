@@ -1,5 +1,6 @@
-# Wasmizer: Curating WebAssembly-driven Projects on GitHub - Artifact
-This repository contains the software artifact for the paper "Wasmizer: Curating WebAssembly-driven Projects on GitHub".
+# Wasmizer: Curating WebAssembly-driven Projects on GitHub
+This is the tool accompanied with the paper "Wasmizer: Curating WebAssembly-driven Projects on GitHub" accepted to MSR 2023 research track.
+
 
 ## What is Wasmizer?
 Wasmizer, a tool that regularly collects WebAssembly-driven projects on GitHub, compiles them, and curates an up-to-date and growing dataset of WebAssembly sources and binaries.
@@ -18,7 +19,7 @@ In the compilation phase, Wasmizer clones the target repositories as long as the
 It then searches for precompilation and compilation source files and automatically compiles each project based on the compilation commands. We identified each CMakeLists.txt file, indicating the use of the cmake build system, we run Emscripten’s cmake wrapper (emcmake). Then, for each Makefile, either resulting from the previous step, or standalone, we run Emscripten’s make wrapper (emmake). It should be noted, compilation source files and commands are stored in the config.json file. Therefore, Wasmizer can be adapted to a different language such as rust by replacing the compilation commands in the config.json file. We also use github commit API in order to retrieve the commit sha of the projects. We consider the latest commit, so the first commit in the retrieved list will be the target commit. Then, we get the commit sha and store it in the metadata.csv file. 
 
 After applying the compilation phase to all projects, it looks for files that are named with either a .wasm or a .wat extension, indicating that they are WebAssembly files. We try to convert all .wat files found into their binary version (.wasm) relying on the wat2wasm tool from the WebAssembly Binary Toolkit, configured with the --enable-all flag to enable all available WebAssembly extensions. We then store all .wasm files in a new directory (wasm-wat-files), under a name composed of the SHA-256 sum of their content. This is to ensure that duplicate files are only present once in the dataset. We store a metadata.csv contains information of the binary files such as name, url, forks, stars, size, creation date, last commit date, commit sha etc.
-Wasmizer also separates the binary files that were already exist and new generated binary files in two folders (wasm-wat-files-pre and wasm-wat-files). Finally, we share the output (binary files and metadata file) via https://tucloud.tu-clausthal.de/index.php/s/MMRQMEZm66GRGXI with password: wasmizer.
+Wasmizer also separates the binary files that were already exist and new generated binary files in two folders (wasm-wat-files-pre and wasm-wat-files). 
 
 
 ## How to configure Wasmizer?
