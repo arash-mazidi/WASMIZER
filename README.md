@@ -100,4 +100,5 @@ Repository ID | Owner-Repository Name | Repository URL | Creation Date | Pushed 
 * _wasm-wat-files-pre_ contains folders with the name of repoOwner-repoName (e.g., RepoOwner: X, and RepoName: Y --> foldername: X-Y). They contain binary files before compilation for each repository.
 
 ### LICENSE
-This is free but requires others to acknowledge it.
+This tool is free, and you are welcome to send pull requests to improve/extend it. Please cite the tool as shown below when it is used elsewhere:
+A. Nicholson, Q. Stiévenart, A. Mazidi and M. Ghafari, "Wasmizer: Curating WebAssembly-driven Projects on GitHub", 20th International Conference on Mining Software Repositories (MSR), 2023.
