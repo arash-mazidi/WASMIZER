@@ -98,3 +98,6 @@ Repository ID | Owner-Repository Name | Repository URL | Creation Date | Pushed 
 * _wasm-wat-files_ contains folders with the name of repoOwner-repoName (e.g., RepoOwner: X, and RepoName: Y --> foldername: X-Y). They contain binary files after comilation for the repository.
 
 * _wasm-wat-files-pre_ contains folders with the name of repoOwner-repoName (e.g., RepoOwner: X, and RepoName: Y --> foldername: X-Y). They contain binary files before compilation for each repository.
+
+### LICENSE
+This is free but requires others to acknowledge it.
