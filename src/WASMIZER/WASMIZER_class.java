@@ -14,8 +14,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Map;
-import java.util.Random;
-import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.fluent.Content;
@@ -28,7 +26,6 @@ import java.io.FileWriter;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
-
 import java.nio.charset.Charset;
 import java.nio.file.*;
 import java.security.MessageDigest;
@@ -80,12 +77,12 @@ public class WASMIZER_class {
 	public static List<String> newfiles = new ArrayList<String>();
 	public static List<String> newfilessource = new ArrayList<String>();
 	public static int wasmcount = 0, watcount = 0, count, prewasmcount = 0, prewatcount = 0, fcount = 0, r = 0,
-			presourcecount = 0, compilesourcecount = 0, totalwat,totalwasm;
+			presourcecount = 0, compilesourcecount = 0, totalwat, totalwasm;
 	public static String reponame, repolink, path, prepath, newFileName, s1;
 	public static String repokeywords, date, stars, forks, size, numOfSymptoms, precompilation_command,
-			compilation_command, precompilation_sourcefile, compilation_sourcefile, formattedstartdatetime,token;
+			compilation_command, precompilation_sourcefile, compilation_sourcefile, formattedstartdatetime, token;
 	public static File mainroot;
-	public static LocalDateTime startdatetime,enddatetime;
+	public static LocalDateTime startdatetime, enddatetime;
 
 	public static void main(String[] args) throws IOException, URISyntaxException, JSONException {
 
@@ -295,6 +292,7 @@ public class WASMIZER_class {
 	// Function for cloning and compiling the repositories
 	public static void cloneAndCompile() throws IOException, JSONException {
 
+//		repolistBasedcode.add("https://github.com/goldvideo/decoder_wasm");
 		for (count = 0; count < repolistBasedcode.size(); count++) {
 			repolink = repolistBasedcode.get(count);
 			// Checking Internet connection
@@ -348,8 +346,8 @@ public class WASMIZER_class {
 			prewatcount = 0;
 			searchForWasmAndWat(mainroot, "pre", repolink);
 			// Search for precompilation files and run them
-			startdatetime=LocalDateTime.now();
-			formattedstartdatetime=startdatetime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+			startdatetime = LocalDateTime.now();
+			formattedstartdatetime = startdatetime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
 			presourcecount = 0;
 			if (precompilation_command.length() != 0 || precompilation_sourcefile.length() != 0) {
 				r = 0;
@@ -366,8 +364,8 @@ public class WASMIZER_class {
 			// Search for .wasm and .wat
 			wasmcount = 0;
 			watcount = 0;
-			enddatetime=LocalDateTime.now();
-			
+			enddatetime = LocalDateTime.now();
+
 			searchForWasmAndWat(mainroot, "post", repolink);
 		}
 	}
@@ -393,30 +391,6 @@ public class WASMIZER_class {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-
-				// Finding the commit sha and add it to metadata
-				String url2 = url;
-				url2 = url2.replace("https://github.com/", "");
-				url2 = url2.replace("\"", "");
-				url2 = "https://api.github.com/repos/" + url2 + "/commits";
-
-				URL urll = new URL(url2);
-				HttpURLConnection con = (HttpURLConnection) urll.openConnection();
-				con.setRequestMethod("GET");
-				con.setRequestProperty("Accept", "application/vnd.github.v3+json");
-
-				// Read the API response and parse the JSON data
-				BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-				StringBuilder response = new StringBuilder();
-				String inputLine;
-				while ((inputLine = in.readLine()) != null) {
-					response.append(inputLine);
-				}
-				in.close();
-				JSONArray jsonArray2 = new JSONArray(response.toString());
-				org.json.JSONObject commit = jsonArray2.getJSONObject(0);
-				String commitSHA = commit.getString("sha");
-
 				clonedrepo.add(url);
 				int index = repolist.indexOf(url);
 				cloneddate.add(pusheddatelist.get(index));
@@ -583,6 +557,7 @@ public class WASMIZER_class {
 							prewatfiles.add(file.getAbsolutePath());
 							destination = Paths.get("output\\wasm-wat-files-pre\\wat-files\\" + reponame);
 							prewatcount++;
+							totalwat++;
 						} else {
 							postwatfiles.add(file.getAbsolutePath());
 							destination = Paths.get("output\\wasm-wat-files\\wat-files\\" + reponame);
@@ -614,6 +589,7 @@ public class WASMIZER_class {
 							prewasmfiles.add(file.getAbsolutePath());
 							destination = Paths.get("output\\wasm-wat-files-pre\\wasm-files\\" + reponame);
 							prewasmcount++;
+							totalwasm++;
 						} else {
 							postwasmfiles.add(file.getAbsolutePath());
 							destination = Paths.get("output\\wasm-wat-files\\wasm-files\\" + reponame);
@@ -634,10 +610,21 @@ public class WASMIZER_class {
 					searchForWasmAndWat(file, prepost, url);
 			}
 		}
-		int total = wasmcount + watcount;
-		Duration duration = Duration.between(startdatetime, enddatetime);
-		long durationseconds = duration.getSeconds();
-		
+		int total = wasmcount + watcount + prewatcount + prewasmcount;
+		String meta = "";
+		long durationseconds = 0;
+		if (prepost.equals("post") && total != 0) {
+			Duration duration = Duration.between(startdatetime, enddatetime);
+			durationseconds = duration.getSeconds();
+			int index = repolist.indexOf(url);
+			meta = idlist.get(index) + "," + foldernamelist.get(index) + "," + repolist.get(index) + ","
+					+ createddatelist.get(index) + "," + pusheddatelist.get(index) + "," + starscountlist.get(index)
+					+ "," + forkscountlist.get(index) + "," + sizelist.get(index) + "," + branchlist.get(index) + ","
+					+ commitSHAlist.get(index) + "," + licenselist.get(index) + "," + prewatcount + "," + prewasmcount
+					+ "," + watcount + "," + wasmcount + "," + presourcecount + "," + compilesourcecount + ","
+					+ formattedstartdatetime + "," + durationseconds;
+		}
+
 		if (prepost.equals("post") && total == 0) {
 			String comm0 = "cmd.exe /c cd repobase && rd /s /q " + reponame + "";
 			runcommand(comm0, 180);
@@ -650,18 +637,9 @@ public class WASMIZER_class {
 			String comm4 = "cmd.exe /c cd output\\wasm-wat-files\\wasm-files && rd /s /q " + reponame + "";
 			runcommand(comm4, 60);
 
-		} else if (prepost.equals("post") && watcount == 0) {
-			String comm1 = "cmd.exe /c cd output\\wasm-wat-files-pre\\wat-files && rd /s /q " + reponame + "";
-			runcommand(comm1, 60);
+		} else if (prepost.equals("post") && watcount == 0 && wasmcount != 0) {
 			String comm3 = "cmd.exe /c cd output\\wasm-wat-files\\wat-files && rd /s /q " + reponame + "";
 			runcommand(comm3, 60);
-
-			int index = repolist.indexOf(url);
-			String meta = idlist.get(index) + "," + foldernamelist.get(index) + "," + repolist.get(index) + ","
-					+ createddatelist.get(index) + "," + pusheddatelist.get(index) + "," + starscountlist.get(index)
-					+ "," + forkscountlist.get(index) + "," + sizelist.get(index) + "," + branchlist.get(index) + ","
-					+ commitSHAlist.get(index) + "," + licenselist.get(index) + "," + prewatcount + "," + prewasmcount
-					+ "," + watcount + "," + wasmcount + "," + presourcecount + "," + compilesourcecount + "," + formattedstartdatetime + "," + durationseconds;
 
 			File file = new File("output\\wasm-wat-files\\wasm-files\\" + reponame + "\\metadata.csv");
 			FileWriter fw = new FileWriter(file);
@@ -674,18 +652,9 @@ public class WASMIZER_class {
 			fw.close();
 			metadata.add(meta);
 			savemetadata(metadata);
-		} else if (prepost.equals("post") && wasmcount == 0) {
-			String comm2 = "cmd.exe /c cd output\\wasm-wat-files-pre\\wasm-files && rd /s /q " + reponame + "";
-			runcommand(comm2, 60);
+		} else if (prepost.equals("post") && wasmcount == 0 && watcount != 0) {
 			String comm4 = "cmd.exe /c cd output\\wasm-wat-files\\wasm-files && rd /s /q " + reponame + "";
 			runcommand(comm4, 60);
-
-			int index = repolist.indexOf(url);
-			String meta = idlist.get(index) + "," + foldernamelist.get(index) + "," + repolist.get(index) + ","
-					+ createddatelist.get(index) + "," + pusheddatelist.get(index) + "," + starscountlist.get(index)
-					+ "," + forkscountlist.get(index) + "," + sizelist.get(index) + "," + branchlist.get(index) + ","
-					+ commitSHAlist.get(index) + "," + licenselist.get(index) + "," + prewatcount + "," + prewasmcount
-					+ "," + watcount + "," + wasmcount + "," + presourcecount + "," + compilesourcecount;
 
 			File file = new File("output\\wasm-wat-files\\wat-files\\" + reponame + "\\metadata.csv");
 			FileWriter fw = new FileWriter(file);
@@ -698,6 +667,16 @@ public class WASMIZER_class {
 			fw.close();
 			metadata.add(meta);
 			savemetadata(metadata);
+		} else if (prepost.equals("post") && prewatcount == 0) {
+			String comm4 = "cmd.exe /c cd output\\wasm-wat-files-pre\\wat-files && rd /s /q " + reponame + "";
+			runcommand(comm4, 60);
+			metadata.add(meta);
+			savemetadata(metadata);
+		} else if (prepost.equals("post") && prewasmcount == 0) {
+			String comm4 = "cmd.exe /c cd output\\wasm-wat-files-pre\\wasm-files && rd /s /q " + reponame + "";
+			runcommand(comm4, 60);
+			metadata.add(meta);
+			savemetadata(metadata);
 		}
 		// Save total statistic of wat and wasm files
 		File file = new File("output\\statistics.csv");
@@ -705,17 +684,17 @@ public class WASMIZER_class {
 		BufferedWriter bw = new BufferedWriter(fw);
 		bw.write("Total wat files");
 		bw.newLine();
-		String tmp1=Integer.toString(totalwat);
+		String tmp1 = Integer.toString(totalwat);
 		bw.write(tmp1);
 		bw.newLine();
 		bw.newLine();
 		bw.write("Total wasm files");
 		bw.newLine();
-		String tmp2=Integer.toString(totalwasm);
+		String tmp2 = Integer.toString(totalwasm);
 		bw.write(tmp2);
 		bw.close();
-		fw.close();		
-		
+		fw.close();
+
 		saveArraylistFile(clonedrepo, "clonedrepo");
 		saveArraylistFile(cloneddate, "cloneddate");
 	}
@@ -790,22 +769,22 @@ public class WASMIZER_class {
 			compilation_command = (String) jsonObject.get("compilation_command");
 			precompilation_sourcefile = (String) jsonObject.get("precompilation_sourcefile");
 			compilation_sourcefile = (String) jsonObject.get("compilation_sourcefile");
-			token=(String) jsonObject.get("token");
+			token = (String) jsonObject.get("token");
 		} catch (IOException | ParseException e) {
 			e.printStackTrace();
 		}
-		
+
 		try {
 			BufferedReader br = new BufferedReader(new FileReader("output\\statistics.csv"));
 			br.readLine();
-			totalwat =Integer.parseInt(br.readLine());
+			totalwat = Integer.parseInt(br.readLine());
 			br.readLine();
 			br.readLine();
-			totalwasm =Integer.parseInt(br.readLine());
+			totalwasm = Integer.parseInt(br.readLine());
 			br.close();
 		} catch (Exception e) {
 			e.printStackTrace();
-		}	
+		}
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////
