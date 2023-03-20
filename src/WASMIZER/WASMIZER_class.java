@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
+import java.net.ProtocolException;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.URISyntaxException;
@@ -25,11 +27,16 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
+
 import java.nio.charset.Charset;
 import java.nio.file.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -47,13 +54,16 @@ public class WASMIZER_class {
 
 	private static Gson gson;
 	public static List<String> metadata = new ArrayList<String>();
+	public static List<String> commitSHAlist = new ArrayList<String>();
 	public static List<String> repolist = new ArrayList<String>();
 	public static List<String> clonedrepo = new ArrayList<String>();
 	public static List<String> starscountlist = new ArrayList<String>();
 	public static List<String> forkscountlist = new ArrayList<String>();
 	public static List<String> sizelist = new ArrayList<String>();
+	public static List<String> licenselist = new ArrayList<String>();
+	public static List<String> branchlist = new ArrayList<String>();
 	public static List<String> createddatelist = new ArrayList<String>();
-	public static List<String> idlist = new ArrayList<String>();
+	public static List<Long> idlist = new ArrayList<Long>();
 	public static List<String> foldernamelist = new ArrayList<String>();
 	public static List<String> cloneddate = new ArrayList<String>();
 	public static List<String> repolistBasedcode = new ArrayList<String>();
@@ -69,11 +79,13 @@ public class WASMIZER_class {
 	public static List<String> symptopms = new ArrayList<String>();
 	public static List<String> newfiles = new ArrayList<String>();
 	public static List<String> newfilessource = new ArrayList<String>();
-	public static int wasmcount = 0, watcount = 0, count, prewasmcount = 0, prewatcount = 0, fcount = 0, r = 0;
+	public static int wasmcount = 0, watcount = 0, count, prewasmcount = 0, prewatcount = 0, fcount = 0, r = 0,
+			presourcecount = 0, compilesourcecount = 0, totalwat,totalwasm;
 	public static String reponame, repolink, path, prepath, newFileName, s1;
 	public static String repokeywords, date, stars, forks, size, numOfSymptoms, precompilation_command,
-			compilation_command, precompilation_sourcefile, compilation_sourcefile;
+			compilation_command, precompilation_sourcefile, compilation_sourcefile, formattedstartdatetime;
 	public static File mainroot;
+	public static LocalDateTime startdatetime,enddatetime;
 
 	public static void main(String[] args) throws IOException, URISyntaxException, JSONException {
 
@@ -154,7 +166,7 @@ public class WASMIZER_class {
 
 			gson.toJsonTree(repocontentSearchResult).getAsJsonObject().get("items").getAsJsonArray().forEach(r -> {
 				// Ignore forked repositories
-				String id = r.getAsJsonObject().get("id").toString();
+				long id = (r.getAsJsonObject().get("id").getAsLong());
 				String repourl = r.getAsJsonObject().get("html_url").toString();
 				String foldername = repourl.split("/")[repourl.split("/").length - 2] + "-"
 						+ repourl.split("/")[repourl.split("/").length - 1];
@@ -165,6 +177,30 @@ public class WASMIZER_class {
 				String starscount = r.getAsJsonObject().get("stargazers_count").toString();
 				String size = r.getAsJsonObject().get("size").toString();
 				String forkscount = r.getAsJsonObject().get("forks_count").toString();
+				String branch = r.getAsJsonObject().get("default_branch").toString();
+				branch = branch.replace("\"", "");
+				String licensename;
+				try {
+					String license = r.getAsJsonObject().get("license").toString();
+					String license1 = license.split(",")[1];
+					licensename = license1.split(":")[1];
+					licensename = licensename.replace("\"", "");
+				} catch (Exception e) {
+					licensename = "unknown";
+				}
+				String commit = "";
+				try {
+					commit = commitSHA(repourl);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (JSONException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 
 				if (fork.equals("false")) {
 					// if repository is not cloned, add to list for cloning
@@ -177,6 +213,9 @@ public class WASMIZER_class {
 						starscountlist.add(starscount);
 						forkscountlist.add(forkscount);
 						sizelist.add(size);
+						branchlist.add(branch);
+						licenselist.add(licensename);
+						commitSHAlist.add(commit);
 					}
 					// if repository is cloned but pushed after previous clone
 					else if (!(cloneddate.get(clonedrepo.indexOf(repourl)).equals(pusheddate))) {
@@ -189,7 +228,7 @@ public class WASMIZER_class {
 						// Repository cloned before but has pushed after cloning, we delete existing
 						// files
 						String comm0 = "cmd.exe /c cd repobase && rd /s /q " + folder + "";
-						runcommand(comm0, 120);
+						runcommand(comm0, 180);
 						String comm1 = "cmd.exe /c cd output\\wasm-wat-files-pre\\wat-files && rd /s /q " + folder + "";
 						runcommand(comm1, 60);
 						String comm2 = "cmd.exe /c cd output\\wasm-wat-files-pre\\wasm-files && rd /s /q " + folder
@@ -208,6 +247,9 @@ public class WASMIZER_class {
 						starscountlist.add(starscount);
 						forkscountlist.add(forkscount);
 						sizelist.add(size);
+						branchlist.add(branch);
+						licenselist.add(licensename);
+						commitSHAlist.add(commit);
 					}
 				}
 			});
@@ -302,25 +344,32 @@ public class WASMIZER_class {
 
 			mainroot = new File(rootDir);
 			// Search for .wasm and .wat before compile
-			searchForWasmAndWat(mainroot, "pre");
+			prewasmcount = 0;
+			prewatcount = 0;
+			searchForWasmAndWat(mainroot, "pre", repolink);
 			// Search for precompilation files and run them
+			startdatetime=LocalDateTime.now();
+			formattedstartdatetime=startdatetime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+			presourcecount = 0;
 			if (precompilation_command.length() != 0 || precompilation_sourcefile.length() != 0) {
 				r = 0;
 				preCompilation(mainroot);
 			}
 			stopForSecond(15);
 			// Search for compilation files and compile them
+			compilesourcecount = 0;
 			if (compilation_command.length() != 0 || compilation_sourcefile.length() != 0) {
 				r = 0;
 				Compilation(mainroot);
 			}
 			stopForSecond(20);
 			// Search for .wasm and .wat
-			searchForWasmAndWat(mainroot, "post");
+			wasmcount = 0;
+			watcount = 0;
+			enddatetime=LocalDateTime.now();
+			
+			searchForWasmAndWat(mainroot, "post", repolink);
 		}
-		saveArraylistFile(clonedrepo, "clonedrepo");
-		saveArraylistFile(cloneddate, "cloneddate");
-		savemetadata(metadata);
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -371,9 +420,6 @@ public class WASMIZER_class {
 				clonedrepo.add(url);
 				int index = repolist.indexOf(url);
 				cloneddate.add(pusheddatelist.get(index));
-				metadata.add(idlist.get(index) + "," + foldernamelist.get(index) + "," + repolist.get(index) + ","
-						+ createddatelist.get(index) + "," + pusheddatelist.get(index) + "," + starscountlist.get(index)
-						+ "," + forkscountlist.get(index) + "," + sizelist.get(index) + "," + commitSHA);
 				stopForSecond(20);
 				return path;
 			} catch (IOException e) {
@@ -399,6 +445,7 @@ public class WASMIZER_class {
 					parentdir = parentdir.replace(xx, "");
 					if (xx.equals(precompilation_sourcefile)) {
 						if (!(is_insubmodule(cmakefiledir))) {
+							presourcecount++;
 							pretemp.clear();
 							posttemp.clear();
 							fcount = 0;
@@ -472,6 +519,7 @@ public class WASMIZER_class {
 					parentdir = parentdir.replace(xx, "");
 					if (xx.equals(compilation_sourcefile) || xx.equals(compilation_sourcefile.toLowerCase())) {
 						// counting the files before command
+						compilesourcecount++;
 						pretemp.clear();
 						posttemp.clear();
 						fcount = 0;
@@ -518,7 +566,7 @@ public class WASMIZER_class {
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Function for searching .wasm and .wat files
-	public static void searchForWasmAndWat(File root, String prepost) throws IOException {
+	public static void searchForWasmAndWat(File root, String prepost, String url) throws IOException {
 		File[] files = root.listFiles();
 		Path destination;
 		if (files != null) {
@@ -534,9 +582,12 @@ public class WASMIZER_class {
 						if (prepost.equals("pre")) {
 							prewatfiles.add(file.getAbsolutePath());
 							destination = Paths.get("output\\wasm-wat-files-pre\\wat-files\\" + reponame);
+							prewatcount++;
 						} else {
 							postwatfiles.add(file.getAbsolutePath());
 							destination = Paths.get("output\\wasm-wat-files\\wat-files\\" + reponame);
+							watcount++;
+							totalwat++;
 						}
 						String newFileName = hash256(source);
 						newFileName = newFileName + ".wat";
@@ -562,9 +613,12 @@ public class WASMIZER_class {
 						if (prepost.equals("pre")) {
 							prewasmfiles.add(file.getAbsolutePath());
 							destination = Paths.get("output\\wasm-wat-files-pre\\wasm-files\\" + reponame);
+							prewasmcount++;
 						} else {
 							postwasmfiles.add(file.getAbsolutePath());
 							destination = Paths.get("output\\wasm-wat-files\\wasm-files\\" + reponame);
+							wasmcount++;
+							totalwasm++;
 						}
 						String newFileName = hash256(source);
 						newFileName = newFileName + ".wasm";
@@ -577,9 +631,93 @@ public class WASMIZER_class {
 							System.out.println("File exists");
 					}
 				} else if (file.isDirectory())
-					searchForWasmAndWat(file, prepost);
+					searchForWasmAndWat(file, prepost, url);
 			}
 		}
+		int total = wasmcount + watcount;
+		Duration duration = Duration.between(startdatetime, enddatetime);
+		long durationseconds = duration.getSeconds();
+		
+		if (prepost.equals("post") && total == 0) {
+			String comm0 = "cmd.exe /c cd repobase && rd /s /q " + reponame + "";
+			runcommand(comm0, 180);
+			String comm1 = "cmd.exe /c cd output\\wasm-wat-files-pre\\wat-files && rd /s /q " + reponame + "";
+			runcommand(comm1, 60);
+			String comm2 = "cmd.exe /c cd output\\wasm-wat-files-pre\\wasm-files && rd /s /q " + reponame + "";
+			runcommand(comm2, 60);
+			String comm3 = "cmd.exe /c cd output\\wasm-wat-files\\wat-files && rd /s /q " + reponame + "";
+			runcommand(comm3, 60);
+			String comm4 = "cmd.exe /c cd output\\wasm-wat-files\\wasm-files && rd /s /q " + reponame + "";
+			runcommand(comm4, 60);
+
+		} else if (prepost.equals("post") && watcount == 0) {
+			String comm1 = "cmd.exe /c cd output\\wasm-wat-files-pre\\wat-files && rd /s /q " + reponame + "";
+			runcommand(comm1, 60);
+			String comm3 = "cmd.exe /c cd output\\wasm-wat-files\\wat-files && rd /s /q " + reponame + "";
+			runcommand(comm3, 60);
+
+			int index = repolist.indexOf(url);
+			String meta = idlist.get(index) + "," + foldernamelist.get(index) + "," + repolist.get(index) + ","
+					+ createddatelist.get(index) + "," + pusheddatelist.get(index) + "," + starscountlist.get(index)
+					+ "," + forkscountlist.get(index) + "," + sizelist.get(index) + "," + branchlist.get(index) + ","
+					+ commitSHAlist.get(index) + "," + licenselist.get(index) + "," + prewatcount + "," + prewasmcount
+					+ "," + watcount + "," + wasmcount + "," + presourcecount + "," + compilesourcecount + "," + formattedstartdatetime + "," + durationseconds;
+
+			File file = new File("output\\wasm-wat-files\\wasm-files\\" + reponame + "\\metadata.csv");
+			FileWriter fw = new FileWriter(file);
+			BufferedWriter bw = new BufferedWriter(fw);
+			bw.write(
+					"Repository ID , Owner-Repository Name , Repository URL , Creation Date , Pushed date , Stars , Forks , Size , Branch Name , Commit SHA , License Name , # wat file before compilation , # wasm file before compilation , # wat file after compilation , # wasm file after compilation , # Pre compilation source , # compilation source , Date/Time of compilation , Compilation time (ms)");
+			bw.newLine();
+			bw.write(meta);
+			bw.close();
+			fw.close();
+			metadata.add(meta);
+			savemetadata(metadata);
+		} else if (prepost.equals("post") && wasmcount == 0) {
+			String comm2 = "cmd.exe /c cd output\\wasm-wat-files-pre\\wasm-files && rd /s /q " + reponame + "";
+			runcommand(comm2, 60);
+			String comm4 = "cmd.exe /c cd output\\wasm-wat-files\\wasm-files && rd /s /q " + reponame + "";
+			runcommand(comm4, 60);
+
+			int index = repolist.indexOf(url);
+			String meta = idlist.get(index) + "," + foldernamelist.get(index) + "," + repolist.get(index) + ","
+					+ createddatelist.get(index) + "," + pusheddatelist.get(index) + "," + starscountlist.get(index)
+					+ "," + forkscountlist.get(index) + "," + sizelist.get(index) + "," + branchlist.get(index) + ","
+					+ commitSHAlist.get(index) + "," + licenselist.get(index) + "," + prewatcount + "," + prewasmcount
+					+ "," + watcount + "," + wasmcount + "," + presourcecount + "," + compilesourcecount;
+
+			File file = new File("output\\wasm-wat-files\\wat-files\\" + reponame + "\\metadata.csv");
+			FileWriter fw = new FileWriter(file);
+			BufferedWriter bw = new BufferedWriter(fw);
+			bw.write(
+					"Repository ID , Owner-Repository Name , Repository URL , Creation Date , Pushed date , Stars , Forks , Size , Branch Name , Commit SHA , License Name , # wat file before compilation , # wasm file before compilation , # wat file after compilation , # wasm file after compilation , # Pre compilation source , # compilation source , Date/Time of compilation , Compilation time (ms)");
+			bw.newLine();
+			bw.write(meta);
+			bw.close();
+			fw.close();
+			metadata.add(meta);
+			savemetadata(metadata);
+		}
+		// Save total statistic of wat and wasm files
+		File file = new File("output\\statistics.csv");
+		FileWriter fw = new FileWriter(file);
+		BufferedWriter bw = new BufferedWriter(fw);
+		bw.write("Total wat files");
+		bw.newLine();
+		String tmp1=Integer.toString(totalwat);
+		bw.write(tmp1);
+		bw.newLine();
+		bw.newLine();
+		bw.write("Total wasm files");
+		bw.newLine();
+		String tmp2=Integer.toString(totalwasm);
+		bw.write(tmp2);
+		bw.close();
+		fw.close();		
+		
+		saveArraylistFile(clonedrepo, "clonedrepo");
+		saveArraylistFile(cloneddate, "cloneddate");
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -655,6 +793,18 @@ public class WASMIZER_class {
 		} catch (IOException | ParseException e) {
 			e.printStackTrace();
 		}
+		
+		try {
+			BufferedReader br = new BufferedReader(new FileReader("output\\statistics.csv"));
+			br.readLine();
+			totalwat =Integer.parseInt(br.readLine());
+			br.readLine();
+			br.readLine();
+			totalwasm =Integer.parseInt(br.readLine());
+			br.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}	
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -680,7 +830,7 @@ public class WASMIZER_class {
 		FileWriter fw = new FileWriter(file);
 		BufferedWriter bw = new BufferedWriter(fw);
 		bw.write(
-				"Repository ID , Owner-Repository Name , Repository URL , Creation Date , Pushed date , Stars , Forks , Size, Commit SHA");
+				"Repository ID , Owner-Repository Name , Repository URL , Creation Date , Pushed date , Stars , Forks , Size , Branch Name , Commit SHA , License Name , # wat file before compilation , # wasm file before compilation , # wat file after compilation , # wasm file after compilation , # Pre compilation source , # compilation source");
 		bw.newLine();
 		for (int k = 0; k < list.size(); k++) {
 			bw.write(list.get(k));
@@ -741,6 +891,7 @@ public class WASMIZER_class {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		stopForSecond(30);
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -775,6 +926,56 @@ public class WASMIZER_class {
 			}
 		}
 		return fcount;
+	}
+
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// Finding the commit SHA
+	public static String commitSHA(String url) throws IOException, JSONException, InterruptedException {
+		stopForSecond(20);
+		String commitSHA = "";
+		int retrycount = 0;
+		while (retrycount < 5) {
+			try {
+				String url2 = url;
+				url2 = url2.replace("https://github.com/", "");
+				url2 = url2.replace("\"", "");
+				url2 = "https://api.github.com/repos/" + url2 + "/commits";
+
+				URL urll = new URL(url2);
+				HttpURLConnection con = (HttpURLConnection) urll.openConnection();
+				con.setRequestMethod("GET");
+				con.setRequestProperty("Accept", "application/vnd.github.v3+json");
+				con.setRequestProperty("Authorization", "token " + "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");
+
+				// Read the API response and parse the JSON data
+				int status = con.getResponseCode();
+				if (status == 200) {
+					BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+					StringBuilder response = new StringBuilder();
+					String inputLine;
+					while ((inputLine = in.readLine()) != null) {
+						response.append(inputLine);
+					}
+					in.close();
+					JSONArray jsonArray2 = new JSONArray(response.toString());
+					org.json.JSONObject commit = jsonArray2.getJSONObject(0);
+					commitSHA = commit.getString("sha");
+					break;
+				} else if (status == 403) {
+					String resetheader = con.getHeaderField("X-RateLimit-Reset");
+					if (resetheader != null) {
+						long resettime = Long.parseLong(resetheader) * 1000;
+						long waittime = resettime - System.currentTimeMillis();
+						Thread.sleep(waittime);
+						stopForSecond(20);
+					}
+				}
+			} catch (IOException e) {
+				commitSHA = "Rate limit";
+			}
+			retrycount++;
+		}
+		return commitSHA;
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////

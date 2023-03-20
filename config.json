@@ -1,8 +1,8 @@
 {
 	"keywords":"wasm+OR+webassembly+OR+emscripten+OR+%22web+assembly%22",
-	"date":"2021-01-01..2023-01-01",
-	"stars":"20",
-	"forks":"20",
+	"date":"2021-01-01..2021-02-01",
+	"stars":"10",
+	"forks":"10",
 	"size":"2",
 	"numOfSymptoms":"8",
 	"symptom0":"%22include%20%3Cemscripten.h%3E%22",
