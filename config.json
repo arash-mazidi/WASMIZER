@@ -16,5 +16,6 @@
 	"precompilation_command":"emscripten/emsdk emcmake cmake -D CMAKE_BUILD_TYPE=Debug",
 	"compilation_command":"emscripten/emsdk emmake make --debug=abvijm",
 	"precompilation_sourcefile":"CMakeLists.txt",
-	"compilation_sourcefile":"Makefile"
+	"compilation_sourcefile":"Makefile",
+	"token":""
 }

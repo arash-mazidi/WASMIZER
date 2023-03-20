@@ -83,7 +83,7 @@ public class WASMIZER_class {
 			presourcecount = 0, compilesourcecount = 0, totalwat,totalwasm;
 	public static String reponame, repolink, path, prepath, newFileName, s1;
 	public static String repokeywords, date, stars, forks, size, numOfSymptoms, precompilation_command,
-			compilation_command, precompilation_sourcefile, compilation_sourcefile, formattedstartdatetime;
+			compilation_command, precompilation_sourcefile, compilation_sourcefile, formattedstartdatetime,token;
 	public static File mainroot;
 	public static LocalDateTime startdatetime,enddatetime;
 
@@ -790,6 +790,7 @@ public class WASMIZER_class {
 			compilation_command = (String) jsonObject.get("compilation_command");
 			precompilation_sourcefile = (String) jsonObject.get("precompilation_sourcefile");
 			compilation_sourcefile = (String) jsonObject.get("compilation_sourcefile");
+			token=(String) jsonObject.get("token");
 		} catch (IOException | ParseException e) {
 			e.printStackTrace();
 		}
@@ -945,7 +946,7 @@ public class WASMIZER_class {
 				HttpURLConnection con = (HttpURLConnection) urll.openConnection();
 				con.setRequestMethod("GET");
 				con.setRequestProperty("Accept", "application/vnd.github.v3+json");
-				con.setRequestProperty("Authorization", "token " + "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");
+				con.setRequestProperty("Authorization", "token " + token);
 
 				// Read the API response and parse the JSON data
 				int status = con.getResponseCode();
