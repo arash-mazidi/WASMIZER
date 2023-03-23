@@ -820,7 +820,7 @@ public class WASMIZER_class {
 		FileWriter fw = new FileWriter(file);
 		BufferedWriter bw = new BufferedWriter(fw);
 		bw.write(
-				"Repository ID , Owner-Repository Name , Repository URL , Creation Date , Pushed date , Stars , Forks , Size , Branch Name , Commit SHA , License Name , # wat file before compilation , # wasm file before compilation , # wat file after compilation , # wasm file after compilation , # Pre compilation source , # compilation source  , Date/Time of compilation , Compilation time (ms)");
+				"Repository ID , Owner-Repository Name , Repository URL , Creation Date , Pushed date , Stars , Forks , Size , Branch Name , Commit SHA , License Name , # wat file before compilation , # wasm file before compilation , # wat file after compilation , # wasm file after compilation , # Pre compilation source , # compilation source  , Date/Time of compilation , Compilation time (second)");
 		bw.newLine();
 		for (int k = 0; k < list.size(); k++) {
 			bw.write(list.get(k));

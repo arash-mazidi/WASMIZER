@@ -44,6 +44,7 @@ Note: If you don't need to precompilation phase (based on the project language),
 * "precompilation_sourcefile" and "compilation_sourcefile"--> These two parameters are used as compilation source files. As Wasmizer is initially built to compile the C/C++ programs to WebAssembly, we used CMakelist.txt and Makefile for precompilation and compilation source files, respectively.
 Note: If you don't need to precompilation phase (based on the project language), you can make it empty (e.g., precompilation_sourcefile = "").
 
+* "token" --> Wasmizer uses Github API in order to collect the commit sha of repositories. This API needs a token that you should generate a Githab token on the Github website (https://docs.github.com/en/enterprise-server@3.4/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token). 
 
 ## How Wasmizer works?
 1- It searches for repositories based on the keywords and save them in the repositories.csv file.
@@ -64,6 +65,9 @@ Note: If you don't need to precompilation phase (based on the project language),
 
 7- It converts .wat files to .wasm using wat2wasm tool.
 
+8- It removes repositories that don't generate binary files.
+
+9- It removes output folders that are empty.
 
 ## How to launch Wasmizer?
 
@@ -87,7 +91,9 @@ Furthermore, name and date of all cloned repositories will be stored in the clon
 
 Wasmizer will clone the repositories into repobase folder and compiled projects will be there. 
 
-The output of the Wasmizer that are binary files are in the output folder. In the output folder, there are a metadata.csv file and two folders wasm-wat-files and wasm-wat-files-pre.
+The output of the Wasmizer that are binary files are in the output folder. In the output folder, there are a statistics.csv, a metadata.csv file and two folders wasm-wat-files and wasm-wat-files-pre.
+
+* _statistics.csv_ shows the number of .wat and .wasm files that have been generated so far.
 
 * _metadata.csv_ contains information about the repositories that generated binary files such as name, url, creation date, last pushed date, stars, forsk, size, commit sha, etc.
 
@@ -95,9 +101,9 @@ A sample of metadata file header:
 
 Repository ID | Owner-Repository Name | Repository URL | Creation Date | Pushed Date | Stars| Forks| Size| Commit SHA
 
-* _wasm-wat-files_ contains folders with the name of repoOwner-repoName (e.g., RepoOwner: X, and RepoName: Y --> foldername: X-Y). They contain binary files after comilation for the repository.
+* _wasm-wat-files_ contains wasm-files and wat-files folders. They includes folders with the name of repoOwner-repoName (e.g., RepoOwner: X, and RepoName: Y --> foldername: X-Y). They contain binary files after comilation for the repository, and a metadata.csv file that shows information about the compilation.
 
-* _wasm-wat-files-pre_ contains folders with the name of repoOwner-repoName (e.g., RepoOwner: X, and RepoName: Y --> foldername: X-Y). They contain binary files before compilation for each repository.
+* _wasm-wat-files-pre_ contains wasm-files and wat-files folders. They includes folders with the name of repoOwner-repoName (e.g., RepoOwner: X, and RepoName: Y --> foldername: X-Y). They contain binary files before compilation for each repository.
 
 ### LICENSE
 This tool is free, and you are welcome to send pull requests to improve/extend it. Please cite the tool as shown below when it is used elsewhere:
