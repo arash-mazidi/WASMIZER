@@ -292,81 +292,179 @@ public class WASMIZER_class {
 	// Function for cloning and compiling the repositories
 	public static void cloneAndCompile() throws IOException, JSONException {
 
-//		repolistBasedcode.add("https://github.com/goldvideo/decoder_wasm");
 		for (count = 0; count < repolistBasedcode.size(); count++) {
-			repolink = repolistBasedcode.get(count);
-			// Checking Internet connection
-			while (!(isInternetAvailable("www.google.com", 80))) {
-				System.out.println("\nYou are not connected to Internet! Wait to connect ...");
-				stopForSecond(5);
-			}
-			path = clone(repolink);
-			stopForSecond(5);
-			System.out.println("\n\nRepository is cloned!");
-			reponame = path;
-
-			// when repository is already cloned, path will be null
-			if (path == "")
-				continue;
-			// create folders with the project name for .wasm and .wat files in the
-			// wasm-wat-files, and wasm-wat-files-pre folders
-			String command2 = "cmd.exe /c cd output\\wasm-wat-files\\wasm-files && md " + reponame + "";
-			runcommand(command2, 60);
-			String command3 = "cmd.exe /c cd output\\wasm-wat-files\\wat-files && md " + reponame + "";
-			runcommand(command3, 60);
-			String command4 = "cmd.exe /c cd output\\wasm-wat-files-pre\\wasm-files && md " + reponame + "";
-			runcommand(command4, 60);
-			String command5 = "cmd.exe /c cd output\\wasm-wat-files-pre\\wat-files && md " + reponame + "";
-			runcommand(command5, 60);
-
-			String rootDir = "repobase\\" + path + "\\";
-
-			// Find submodules in a repository
-			submodules = new ArrayList<String>();
-			RepositoryBuilder builder = new RepositoryBuilder();
-			Repository repo = builder.setGitDir(new File(rootDir + ".git")).readEnvironment() // scan environment GIT_*
-					.findGitDir() // scan up the file system tree
-					.build();
-			SubmoduleWalk walk = SubmoduleWalk.forIndex(repo);
-			while (walk.next()) {
-				try {
-					submodules.add(rootDir + walk.getModuleName());
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (ConfigInvalidException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+			try {
+				repolink = repolistBasedcode.get(count);
+				// Checking Internet connection
+				while (!(isInternetAvailable("www.google.com", 80))) {
+					System.out.println("\nYou are not connected to Internet! Wait to connect ...");
+					stopForSecond(5);
 				}
-			}
+				path = clone(repolink);
+				stopForSecond(5);
+				System.out.println("\n\nRepository is cloned!");
+				reponame = path;
 
-			mainroot = new File(rootDir);
-			// Search for .wasm and .wat before compile
-			prewasmcount = 0;
-			prewatcount = 0;
-			searchForWasmAndWat(mainroot, "pre", repolink);
-			// Search for precompilation files and run them
-			startdatetime = LocalDateTime.now();
-			formattedstartdatetime = startdatetime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-			presourcecount = 0;
-			if (precompilation_command.length() != 0 || precompilation_sourcefile.length() != 0) {
-				r = 0;
-				preCompilation(mainroot);
-			}
-			stopForSecond(15);
-			// Search for compilation files and compile them
-			compilesourcecount = 0;
-			if (compilation_command.length() != 0 || compilation_sourcefile.length() != 0) {
-				r = 0;
-				Compilation(mainroot);
-			}
-			stopForSecond(20);
-			// Search for .wasm and .wat
-			wasmcount = 0;
-			watcount = 0;
-			enddatetime = LocalDateTime.now();
+				// when repository is already cloned, path will be null
+				if (path == "")
+					continue;
+				// create folders with the project name for .wasm and .wat files in the
+				// wasm-wat-files, and wasm-wat-files-pre folders
+				String command2 = "cmd.exe /c cd output\\wasm-wat-files\\wasm-files && md " + reponame + "";
+				runcommand(command2, 60);
+				String command3 = "cmd.exe /c cd output\\wasm-wat-files\\wat-files && md " + reponame + "";
+				runcommand(command3, 60);
+				String command4 = "cmd.exe /c cd output\\wasm-wat-files-pre\\wasm-files && md " + reponame + "";
+				runcommand(command4, 60);
+				String command5 = "cmd.exe /c cd output\\wasm-wat-files-pre\\wat-files && md " + reponame + "";
+				runcommand(command5, 60);
 
-			searchForWasmAndWat(mainroot, "post", repolink);
+				String rootDir = "repobase\\" + path + "\\";
+
+				// Find submodules in a repository
+				submodules = new ArrayList<String>();
+				RepositoryBuilder builder = new RepositoryBuilder();
+				Repository repo = builder.setGitDir(new File(rootDir + ".git")).readEnvironment() // scan environment
+																									// GIT_*
+						.findGitDir() // scan up the file system tree
+						.build();
+				SubmoduleWalk walk = SubmoduleWalk.forIndex(repo);
+				while (walk.next()) {
+					try {
+						submodules.add(rootDir + walk.getModuleName());
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (ConfigInvalidException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+				mainroot = new File(rootDir);
+				// Search for .wasm and .wat before compile
+				prewasmcount = 0;
+				prewatcount = 0;
+				searchForWasmAndWat(mainroot, "pre", repolink);
+				// Search for precompilation files and run them
+				startdatetime = LocalDateTime.now();
+				formattedstartdatetime = startdatetime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+				presourcecount = 0;
+				if (precompilation_command.length() != 0 || precompilation_sourcefile.length() != 0) {
+					r = 0;
+					preCompilation(mainroot);
+				}
+				stopForSecond(15);
+				// Search for compilation files and compile them
+				compilesourcecount = 0;
+				if (compilation_command.length() != 0 || compilation_sourcefile.length() != 0) {
+					r = 0;
+					Compilation(mainroot);
+				}
+				stopForSecond(20);
+				// Search for .wasm and .wat
+				wasmcount = 0;
+				watcount = 0;
+				enddatetime = LocalDateTime.now();
+
+				searchForWasmAndWat(mainroot, "post", repolink);
+
+				int total = wasmcount + watcount + prewatcount + prewasmcount;
+				String meta = "";
+				long durationseconds = 0;
+				if (total != 0) {
+					Duration duration = Duration.between(startdatetime, enddatetime);
+					durationseconds = duration.getSeconds();
+					int index = repolist.indexOf(repolink);
+					meta = idlist.get(index) + "," + foldernamelist.get(index) + "," + repolist.get(index) + ","
+							+ createddatelist.get(index) + "," + pusheddatelist.get(index) + ","
+							+ starscountlist.get(index) + "," + forkscountlist.get(index) + "," + sizelist.get(index)
+							+ "," + branchlist.get(index) + "," + commitSHAlist.get(index) + ","
+							+ licenselist.get(index) + "," + prewatcount + "," + prewasmcount + "," + watcount + ","
+							+ wasmcount + "," + presourcecount + "," + compilesourcecount + "," + formattedstartdatetime
+							+ "," + durationseconds;
+					metadata.add(meta);
+					savemetadata(metadata);
+				}
+
+				if (total == 0) {
+					String comm0 = "cmd.exe /c cd repobase && rd /s /q " + reponame + "";
+					runcommand(comm0, 180);
+					String comm1 = "cmd.exe /c cd output\\wasm-wat-files-pre\\wat-files && rd /s /q " + reponame + "";
+					runcommand(comm1, 60);
+					String comm2 = "cmd.exe /c cd output\\wasm-wat-files-pre\\wasm-files && rd /s /q " + reponame + "";
+					runcommand(comm2, 60);
+					String comm3 = "cmd.exe /c cd output\\wasm-wat-files\\wat-files && rd /s /q " + reponame + "";
+					runcommand(comm3, 60);
+					String comm4 = "cmd.exe /c cd output\\wasm-wat-files\\wasm-files && rd /s /q " + reponame + "";
+					runcommand(comm4, 60);
+
+				} else {
+					if (watcount == 0 && wasmcount != 0) {
+						String comm3 = "cmd.exe /c cd output\\wasm-wat-files\\wat-files && rd /s /q " + reponame + "";
+						runcommand(comm3, 60);
+
+						File file = new File("output\\wasm-wat-files\\wasm-files\\" + reponame + "\\metadata.csv");
+						FileWriter fw = new FileWriter(file);
+						BufferedWriter bw = new BufferedWriter(fw);
+						bw.write(
+								"Repository ID , Owner-Repository Name , Repository URL , Creation Date , Pushed date , Stars , Forks , Size , Branch Name , Commit SHA , License Name , # wat file before compilation , # wasm file before compilation , # wat file after compilation , # wasm file after compilation , # Pre compilation source , # compilation source , Date/Time of compilation , Compilation time (second)");
+						bw.newLine();
+						bw.write(meta);
+						bw.close();
+						fw.close();
+
+					}
+					if (wasmcount == 0 && watcount != 0) {
+						String comm4 = "cmd.exe /c cd output\\wasm-wat-files\\wasm-files && rd /s /q " + reponame + "";
+						runcommand(comm4, 60);
+
+						File file = new File("output\\wasm-wat-files\\wat-files\\" + reponame + "\\metadata.csv");
+						FileWriter fw = new FileWriter(file);
+						BufferedWriter bw = new BufferedWriter(fw);
+						bw.write(
+								"Repository ID , Owner-Repository Name , Repository URL , Creation Date , Pushed date , Stars , Forks , Size , Branch Name , Commit SHA , License Name , # wat file before compilation , # wasm file before compilation , # wat file after compilation , # wasm file after compilation , # Pre compilation source , # compilation source , Date/Time of compilation , Compilation time (second)");
+						bw.newLine();
+						bw.write(meta);
+						bw.close();
+						fw.close();
+
+					}
+					if (prewatcount == 0) {
+						String comm4 = "cmd.exe /c cd output\\wasm-wat-files-pre\\wat-files && rd /s /q " + reponame
+								+ "";
+						runcommand(comm4, 60);
+
+					}
+					if (prewasmcount == 0) {
+						String comm4 = "cmd.exe /c cd output\\wasm-wat-files-pre\\wasm-files && rd /s /q " + reponame
+								+ "";
+						runcommand(comm4, 60);
+
+					}
+				}
+				// Save total statistic of wat and wasm files
+				File file = new File("output\\statistics.csv");
+				FileWriter fw = new FileWriter(file);
+				BufferedWriter bw = new BufferedWriter(fw);
+				bw.write("Total wat files");
+				bw.newLine();
+				String tmp1 = Integer.toString(totalwat);
+				bw.write(tmp1);
+				bw.newLine();
+				bw.newLine();
+				bw.write("Total wasm files");
+				bw.newLine();
+				String tmp2 = Integer.toString(totalwasm);
+				bw.write(tmp2);
+				bw.close();
+				fw.close();
+
+				saveArraylistFile(clonedrepo, "clonedrepo");
+				saveArraylistFile(cloneddate, "cloneddate");
+
+			} catch (Exception e) {
+				// TODO: handle exception
+			}
 		}
 	}
 
@@ -557,7 +655,6 @@ public class WASMIZER_class {
 							prewatfiles.add(file.getAbsolutePath());
 							destination = Paths.get("output\\wasm-wat-files-pre\\wat-files\\" + reponame);
 							prewatcount++;
-							totalwat++;
 						} else {
 							postwatfiles.add(file.getAbsolutePath());
 							destination = Paths.get("output\\wasm-wat-files\\wat-files\\" + reponame);
@@ -589,7 +686,6 @@ public class WASMIZER_class {
 							prewasmfiles.add(file.getAbsolutePath());
 							destination = Paths.get("output\\wasm-wat-files-pre\\wasm-files\\" + reponame);
 							prewasmcount++;
-							totalwasm++;
 						} else {
 							postwasmfiles.add(file.getAbsolutePath());
 							destination = Paths.get("output\\wasm-wat-files\\wasm-files\\" + reponame);
@@ -610,93 +706,6 @@ public class WASMIZER_class {
 					searchForWasmAndWat(file, prepost, url);
 			}
 		}
-		int total = wasmcount + watcount + prewatcount + prewasmcount;
-		String meta = "";
-		long durationseconds = 0;
-		if (prepost.equals("post") && total != 0) {
-			Duration duration = Duration.between(startdatetime, enddatetime);
-			durationseconds = duration.getSeconds();
-			int index = repolist.indexOf(url);
-			meta = idlist.get(index) + "," + foldernamelist.get(index) + "," + repolist.get(index) + ","
-					+ createddatelist.get(index) + "," + pusheddatelist.get(index) + "," + starscountlist.get(index)
-					+ "," + forkscountlist.get(index) + "," + sizelist.get(index) + "," + branchlist.get(index) + ","
-					+ commitSHAlist.get(index) + "," + licenselist.get(index) + "," + prewatcount + "," + prewasmcount
-					+ "," + watcount + "," + wasmcount + "," + presourcecount + "," + compilesourcecount + ","
-					+ formattedstartdatetime + "," + durationseconds;
-		}
-
-		if (prepost.equals("post") && total == 0) {
-			String comm0 = "cmd.exe /c cd repobase && rd /s /q " + reponame + "";
-			runcommand(comm0, 180);
-			String comm1 = "cmd.exe /c cd output\\wasm-wat-files-pre\\wat-files && rd /s /q " + reponame + "";
-			runcommand(comm1, 60);
-			String comm2 = "cmd.exe /c cd output\\wasm-wat-files-pre\\wasm-files && rd /s /q " + reponame + "";
-			runcommand(comm2, 60);
-			String comm3 = "cmd.exe /c cd output\\wasm-wat-files\\wat-files && rd /s /q " + reponame + "";
-			runcommand(comm3, 60);
-			String comm4 = "cmd.exe /c cd output\\wasm-wat-files\\wasm-files && rd /s /q " + reponame + "";
-			runcommand(comm4, 60);
-
-		} else if (prepost.equals("post") && watcount == 0 && wasmcount != 0) {
-			String comm3 = "cmd.exe /c cd output\\wasm-wat-files\\wat-files && rd /s /q " + reponame + "";
-			runcommand(comm3, 60);
-
-			File file = new File("output\\wasm-wat-files\\wasm-files\\" + reponame + "\\metadata.csv");
-			FileWriter fw = new FileWriter(file);
-			BufferedWriter bw = new BufferedWriter(fw);
-			bw.write(
-					"Repository ID , Owner-Repository Name , Repository URL , Creation Date , Pushed date , Stars , Forks , Size , Branch Name , Commit SHA , License Name , # wat file before compilation , # wasm file before compilation , # wat file after compilation , # wasm file after compilation , # Pre compilation source , # compilation source , Date/Time of compilation , Compilation time (ms)");
-			bw.newLine();
-			bw.write(meta);
-			bw.close();
-			fw.close();
-			metadata.add(meta);
-			savemetadata(metadata);
-		} else if (prepost.equals("post") && wasmcount == 0 && watcount != 0) {
-			String comm4 = "cmd.exe /c cd output\\wasm-wat-files\\wasm-files && rd /s /q " + reponame + "";
-			runcommand(comm4, 60);
-
-			File file = new File("output\\wasm-wat-files\\wat-files\\" + reponame + "\\metadata.csv");
-			FileWriter fw = new FileWriter(file);
-			BufferedWriter bw = new BufferedWriter(fw);
-			bw.write(
-					"Repository ID , Owner-Repository Name , Repository URL , Creation Date , Pushed date , Stars , Forks , Size , Branch Name , Commit SHA , License Name , # wat file before compilation , # wasm file before compilation , # wat file after compilation , # wasm file after compilation , # Pre compilation source , # compilation source , Date/Time of compilation , Compilation time (ms)");
-			bw.newLine();
-			bw.write(meta);
-			bw.close();
-			fw.close();
-			metadata.add(meta);
-			savemetadata(metadata);
-		} else if (prepost.equals("post") && prewatcount == 0) {
-			String comm4 = "cmd.exe /c cd output\\wasm-wat-files-pre\\wat-files && rd /s /q " + reponame + "";
-			runcommand(comm4, 60);
-			metadata.add(meta);
-			savemetadata(metadata);
-		} else if (prepost.equals("post") && prewasmcount == 0) {
-			String comm4 = "cmd.exe /c cd output\\wasm-wat-files-pre\\wasm-files && rd /s /q " + reponame + "";
-			runcommand(comm4, 60);
-			metadata.add(meta);
-			savemetadata(metadata);
-		}
-		// Save total statistic of wat and wasm files
-		File file = new File("output\\statistics.csv");
-		FileWriter fw = new FileWriter(file);
-		BufferedWriter bw = new BufferedWriter(fw);
-		bw.write("Total wat files");
-		bw.newLine();
-		String tmp1 = Integer.toString(totalwat);
-		bw.write(tmp1);
-		bw.newLine();
-		bw.newLine();
-		bw.write("Total wasm files");
-		bw.newLine();
-		String tmp2 = Integer.toString(totalwasm);
-		bw.write(tmp2);
-		bw.close();
-		fw.close();
-
-		saveArraylistFile(clonedrepo, "clonedrepo");
-		saveArraylistFile(cloneddate, "cloneddate");
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -732,6 +741,7 @@ public class WASMIZER_class {
 			newFileName = hexString.toString();
 		} catch (NoSuchAlgorithmException | IOException e) {
 			e.printStackTrace();
+			newFileName = "unknown";
 		}
 		return newFileName;
 	}
@@ -810,7 +820,7 @@ public class WASMIZER_class {
 		FileWriter fw = new FileWriter(file);
 		BufferedWriter bw = new BufferedWriter(fw);
 		bw.write(
-				"Repository ID , Owner-Repository Name , Repository URL , Creation Date , Pushed date , Stars , Forks , Size , Branch Name , Commit SHA , License Name , # wat file before compilation , # wasm file before compilation , # wat file after compilation , # wasm file after compilation , # Pre compilation source , # compilation source");
+				"Repository ID , Owner-Repository Name , Repository URL , Creation Date , Pushed date , Stars , Forks , Size , Branch Name , Commit SHA , License Name , # wat file before compilation , # wasm file before compilation , # wat file after compilation , # wasm file after compilation , # Pre compilation source , # compilation source  , Date/Time of compilation , Compilation time (ms)");
 		bw.newLine();
 		for (int k = 0; k < list.size(); k++) {
 			bw.write(list.get(k));
