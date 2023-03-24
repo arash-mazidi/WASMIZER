@@ -399,10 +399,30 @@ public class WASMIZER_class {
 					runcommand(comm4, 60);
 
 				} else {
+					if (watcount != 0 && wasmcount != 0) {
+						File file = new File("output\\wasm-wat-files\\wasm-files\\" + reponame + "\\metadata.csv");
+						FileWriter fw = new FileWriter(file);
+						BufferedWriter bw = new BufferedWriter(fw);
+						bw.write(
+								"Repository ID , Owner-Repository Name , Repository URL , Creation Date , Pushed date , Stars , Forks , Size , Branch Name , Commit SHA , License Name , # wat file before compilation , # wasm file before compilation , # wat file after compilation , # wasm file after compilation , # Pre compilation source , # compilation source , Date/Time of compilation , Compilation time (second)");
+						bw.newLine();
+						bw.write(meta);
+						bw.close();
+						fw.close();
+
+						File file2 = new File("output\\wasm-wat-files\\wat-files\\" + reponame + "\\metadata.csv");
+						FileWriter fw2 = new FileWriter(file2);
+						BufferedWriter bw2 = new BufferedWriter(fw2);
+						bw2.write(
+								"Repository ID , Owner-Repository Name , Repository URL , Creation Date , Pushed date , Stars , Forks , Size , Branch Name , Commit SHA , License Name , # wat file before compilation , # wasm file before compilation , # wat file after compilation , # wasm file after compilation , # Pre compilation source , # compilation source , Date/Time of compilation , Compilation time (second)");
+						bw2.newLine();
+						bw2.write(meta);
+						bw2.close();
+						fw2.close();
+					}
 					if (watcount == 0 && wasmcount != 0) {
 						String comm3 = "cmd.exe /c cd output\\wasm-wat-files\\wat-files && rd /s /q " + reponame + "";
 						runcommand(comm3, 60);
-
 						File file = new File("output\\wasm-wat-files\\wasm-files\\" + reponame + "\\metadata.csv");
 						FileWriter fw = new FileWriter(file);
 						BufferedWriter bw = new BufferedWriter(fw);
@@ -417,7 +437,6 @@ public class WASMIZER_class {
 					if (wasmcount == 0 && watcount != 0) {
 						String comm4 = "cmd.exe /c cd output\\wasm-wat-files\\wasm-files && rd /s /q " + reponame + "";
 						runcommand(comm4, 60);
-
 						File file = new File("output\\wasm-wat-files\\wat-files\\" + reponame + "\\metadata.csv");
 						FileWriter fw = new FileWriter(file);
 						BufferedWriter bw = new BufferedWriter(fw);
@@ -427,19 +446,16 @@ public class WASMIZER_class {
 						bw.write(meta);
 						bw.close();
 						fw.close();
-
 					}
 					if (prewatcount == 0) {
 						String comm4 = "cmd.exe /c cd output\\wasm-wat-files-pre\\wat-files && rd /s /q " + reponame
 								+ "";
 						runcommand(comm4, 60);
-
 					}
 					if (prewasmcount == 0) {
 						String comm4 = "cmd.exe /c cd output\\wasm-wat-files-pre\\wasm-files && rd /s /q " + reponame
 								+ "";
 						runcommand(comm4, 60);
-
 					}
 				}
 				// Save total statistic of wat and wasm files
