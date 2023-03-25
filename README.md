@@ -89,7 +89,7 @@ Furthermore, name and date of all cloned repositories will be stored in the clon
 
 ## How dataset is structured?
 
-Wasmizer will clone the repositories into repobase folder and compiled projects will be there. 
+Wasmizer will clone the repositories into repobase folder and compiled projects will be there.
 
 The output of the Wasmizer that are binary files are in the output folder. In the output folder, there are a statistics.csv, a metadata.csv file and two folders wasm-wat-files and wasm-wat-files-pre.
 
@@ -99,13 +99,16 @@ The output of the Wasmizer that are binary files are in the output folder. In th
 
 A sample of metadata file header:
 
-Repository ID | Owner-Repository Name | Repository URL | Creation Date | Pushed Date | Stars| Forks| Size| Commit SHA
+Repository ID | Owner-Repository Name | Repository URL | Creation Date | Pushed Date | Stars| Forks | Size | Branch Name | Commit SHA | License Name | # of wat file before compilation | # of wasm file before compilation | # of wat file after compilation | # of wasm file after compilation | # Pre compilation source | # Compilation source | Date/Time of compilation | Compilation time (second)
 
 * _wasm-wat-files_ contains wasm-files and wat-files folders. They includes folders with the name of repoOwner-repoName (e.g., RepoOwner: X, and RepoName: Y --> foldername: X-Y). They contain binary files after comilation for the repository, and a metadata.csv file that shows information about the compilation.
 
 * _wasm-wat-files-pre_ contains wasm-files and wat-files folders. They includes folders with the name of repoOwner-repoName (e.g., RepoOwner: X, and RepoName: Y --> foldername: X-Y). They contain binary files before compilation for each repository.
 
 ### LICENSE
+
+MIT License. 
+
 This tool is free, and you are welcome to send pull requests to improve/extend it. Please cite the tool as shown below when it is used elsewhere:
 
 A. Nicholson, Q. Stiévenart, A. Mazidi and M. Ghafari, "Wasmizer: Curating WebAssembly-driven Projects on GitHub", 20th International Conference on Mining Software Repositories (MSR), 2023.
