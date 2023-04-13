@@ -13,6 +13,7 @@ import java.net.SocketAddress;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.apache.http.client.ClientProtocolException;
@@ -78,7 +79,7 @@ public class WASMIZER_class {
 	public static List<String> newfilessource = new ArrayList<String>();
 	public static int wasmcount = 0, watcount = 0, count, prewasmcount = 0, prewatcount = 0, fcount = 0, r = 0,
 			presourcecount = 0, compilesourcecount = 0, totalwat, totalwasm;
-	public static String reponame, repolink, path, prepath, newFileName, s1;
+	public static String reponame, repolink, path, prepath, newFileName, s1, github_username;
 	public static String repokeywords, date, stars, forks, size, numOfSymptoms, precompilation_command,
 			compilation_command, precompilation_sourcefile, compilation_sourcefile, formattedstartdatetime, token;
 	public static File mainroot;
@@ -271,12 +272,25 @@ public class WASMIZER_class {
 				stopForSecond(20);
 				codeContentQuery = symptopms.get(num) + "+in:file+repo:" + repos;
 				codeContentQuery = codeContentQuery.replace("\"", "");
-				contentSearchResult = makeRESTCall(GITHUB_API_BASE_URL + GITHUB_API_SEARCH_CODE_PATH + codeContentQuery,
-						"application/vnd.github.v3.text-match+json");
-				totalcount2 = Double.parseDouble(contentSearchResult.get("total_count").toString());
+				String encodedAuth = Base64.getEncoder()
+						.encodeToString((github_username+":"+token).getBytes());
+				URL url = new URL("https://api.github.com/search/code?q=" + codeContentQuery);
+				HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+				connection.setRequestMethod("GET");
+				connection.setRequestProperty("Authorization", "Basic " + encodedAuth);
+				BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+				String inputLine;
+				StringBuffer response = new StringBuffer();
+				while ((inputLine = in.readLine()) != null) {
+					response.append(inputLine);
+				}
+				in.close();
+				Map jsonMap = gson.fromJson(response.toString(), Map.class);
+				totalcount2 = Double.parseDouble(jsonMap.get("total_count").toString());
 				if (totalcount2 >= 1) {
-					gson.toJsonTree(contentSearchResult).getAsJsonObject().get("items").getAsJsonArray().forEach(r -> {
+					gson.toJsonTree(jsonMap).getAsJsonObject().get("items").getAsJsonArray().forEach(r -> {
 						s1 = "Repo: " + r.getAsJsonObject().get("repository").getAsJsonObject().get("html_url");
+
 					});
 					s1 = s1.replace("Repo: ", "");
 					repolistBasedcode.add(s1);
@@ -796,6 +810,7 @@ public class WASMIZER_class {
 			precompilation_sourcefile = (String) jsonObject.get("precompilation_sourcefile");
 			compilation_sourcefile = (String) jsonObject.get("compilation_sourcefile");
 			token = (String) jsonObject.get("token");
+			github_username = (String) jsonObject.get("github_username");
 		} catch (IOException | ParseException e) {
 			e.printStackTrace();
 		}

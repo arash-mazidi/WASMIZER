@@ -44,7 +44,9 @@ Note: If you don't need to precompilation phase (based on the project language),
 * "precompilation_sourcefile" and "compilation_sourcefile"--> These two parameters are used as compilation source files. As Wasmizer is initially built to compile the C/C++ programs to WebAssembly, we used CMakelist.txt and Makefile for precompilation and compilation source files, respectively.
 Note: If you don't need to precompilation phase (based on the project language), you can make it empty (e.g., precompilation_sourcefile = "").
 
-* "token" --> Wasmizer uses Github API in order to collect the commit sha of repositories. This API needs a token that you should generate a Githab token on the Github website (https://docs.github.com/en/enterprise-server@3.4/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token). 
+* "token" --> Wasmizer uses Github API in order to collect the commit sha, and search code in the repositories. These APIs need a token that you should generate a Githab token on the Github website (https://docs.github.com/en/enterprise-server@3.4/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token). 
+
+* "github_username" --> Authentication of APIs needs token and username of a github account. You should input your github username.
 
 ## How Wasmizer works?
 1- It searches for repositories based on the keywords and save them in the repositories.csv file.

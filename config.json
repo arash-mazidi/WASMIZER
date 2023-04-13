@@ -17,5 +17,6 @@
 	"compilation_command":"emscripten/emsdk emmake make --debug=abvijm",
 	"precompilation_sourcefile":"CMakeLists.txt",
 	"compilation_sourcefile":"Makefile",
-	"token":"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"
+	"token":"GITHUB_TOKEN",
+	"github_username":"YOUR_USERNAME"
 }
